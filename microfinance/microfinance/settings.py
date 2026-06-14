@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,11 +38,31 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Apps tierces
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
+    'corsheaders',
+    'channels',
+    'drf_spectacular',
+
+    # Apps locales
+    'accounts',
+    'credits',
+    'repayments',
+    'insurance',
+    'dashboard',
+    'notifications',
+    'chat',
+    'reports',
+    'base',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -79,6 +100,17 @@ DATABASES = {
     }
 }
 
+# Pour basculer sur PostgreSQL en production :
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME':     config('DB_NAME'),
+#         'USER':     config('DB_USER'),
+#         'PASSWORD': config('DB_PASSWORD'),
+#         'HOST':     config('DB_HOST', default='localhost'),
+#         'PORT':     config('DB_PORT', default='5432'),
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -98,11 +130,49 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# REST Framework & JWT
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME':  timedelta(hours=2),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS':  True,
+    'BLACKLIST_AFTER_ROTATION': True,
+}
+
+# Config Swagger 
+SPECTACULAR_SETTINGS = {
+    'TITLE':       'COFINANCE CI API',
+    'DESCRIPTION': 'API REST de la plateforme de microfinance',
+    'VERSION':     '1.0.0',
+}
+
+# User custom
+AUTH_USER_MODEL = 'accounts.User'
+
+CORS_ALLOW_ALL_ORIGINS = True  
+
+# WebSockets et Channels
+ASGI_APPLICATION = 'microfinance.routing.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    }
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'fr-fr'
 
 TIME_ZONE = 'UTC'
 
@@ -115,3 +185,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Upload des medias de l'app
+MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = '/media/'

@@ -1,0 +1,12 @@
+django>=5.0
+djangorestframework
+djangorestframework-simplejwt
+channels
+channels-redis
+drf-spectacular
+django-cors-headers
+python-dateutil
+reportlab
+pillow
+python-decouple
+psycopg2-binary
