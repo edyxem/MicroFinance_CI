@@ -1,0 +1,671 @@
+[
+  {
+    "model": "accounts.user",
+    "pk": 1,
+    "fields": {
+      "password": "pbkdf2_sha256$1200000$aOZBCTo7bKODtCxPszegXQ$ohe0PlacHS7dbqguGH0LrqcHGE8/myM4EQPUYlZzGDs=",
+      "username": "tossou_admin",
+      "first_name": "Admin",
+      "last_name": "Tossou",
+      "email": "tossou@cofinance.ci",
+      "role": "ADMIN",
+      "phone": "+225 07 00 00 00 01",
+      "region": "Abidjan-Plateau",
+      "is_staff": true,
+      "is_superuser": true,
+      "is_active": true,
+      "groups": [],
+      "user_permissions": [],
+      "date_joined": "2026-01-01T08:00:00Z",
+      "last_login": null
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": 2,
+    "fields": {
+      "password": "pbkdf2_sha256$1200000$8qllAMBbNMBVdePmATlmzg$fKDdQQr6O5/jIJXMKvxIxe5wC+HohkjdfO1F93MgZ78=",
+      "username": "operi_carla",
+      "first_name": "Carla",
+      "last_name": "Operi",
+      "email": "o.carla@cofinance.ci",
+      "role": "AGENT",
+      "phone": "+225 07 00 00 00 02",
+      "region": "Abidjan-Yopougon",
+      "is_staff": false,
+      "is_superuser": false,
+      "is_active": true,
+      "groups": [],
+      "user_permissions": [],
+      "date_joined": "2026-01-05T08:00:00Z",
+      "last_login": null
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": 3,
+    "fields": {
+      "password": "pbkdf2_sha256$1200000$8qllAMBbNMBVdePmATlmzg$fKDdQQr6O5/jIJXMKvxIxe5wC+HohkjdfO1F93MgZ78=",
+      "username": "nguessan_charles",
+      "first_name": "Charles",
+      "last_name": "N'guessan",
+      "email": "n.charles@cofinance.ci",
+      "role": "AGENT",
+      "phone": "+225 07 00 00 00 03",
+      "region": "Abidjan-Cocody",
+      "is_staff": false,
+      "is_superuser": false,
+      "is_active": true,
+      "groups": [],
+      "user_permissions": [],
+      "date_joined": "2026-01-05T08:00:00Z",
+      "last_login": null
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": 4,
+    "fields": {
+      "password": "pbkdf2_sha256$1200000$iu5yAE6EAGRCjsn2afWH2r$7zJmnQuvyN9to5rAqwtvAaBkT3CJ+iNEKbLoCSKUCSo=",
+      "username": "aloukou_ariel",
+      "first_name": "Ariel",
+      "last_name": "Aloukou",
+      "email": "a.ariel@gmail.com",
+      "role": "CLIENT",
+      "phone": "+225 07 11 22 33 44",
+      "region": "Abidjan-Abobo",
+      "is_staff": false,
+      "is_superuser": false,
+      "is_active": true,
+      "groups": [],
+      "user_permissions": [],
+      "date_joined": "2026-01-10T08:00:00Z",
+      "last_login": null
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": 5,
+    "fields": {
+      "password": "pbkdf2_sha256$1200000$iu5yAE6EAGRCjsn2afWH2r$7zJmnQuvyN9to5rAqwtvAaBkT3CJ+iNEKbLoCSKUCSo=",
+      "username": "gauli_samuel",
+      "first_name": "Samuel",
+      "last_name": "Gauli",
+      "email": "g.samuel@gmail.com",
+      "role": "CLIENT",
+      "phone": "+225 07 22 33 44 55",
+      "region": "Abidjan-Yopougon",
+      "is_staff": false,
+      "is_superuser": false,
+      "is_active": true,
+      "groups": [],
+      "user_permissions": [],
+      "date_joined": "2026-01-12T08:00:00Z",
+      "last_login": null
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": 6,
+    "fields": {
+      "password": "pbkdf2_sha256$1200000$iu5yAE6EAGRCjsn2afWH2r$7zJmnQuvyN9to5rAqwtvAaBkT3CJ+iNEKbLoCSKUCSo=",
+      "username": "ehoussou_petuel",
+      "first_name": "Petuel",
+      "last_name": "Ehoussou",
+      "email": "e.petuel@gmail.com",
+      "role": "CLIENT",
+      "phone": "+225 07 33 44 55 66",
+      "region": "Abidjan-Cocody",
+      "is_staff": false,
+      "is_superuser": false,
+      "is_active": true,
+      "groups": [],
+      "user_permissions": [],
+      "date_joined": "2026-01-15T08:00:00Z",
+      "last_login": null
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": 7,
+    "fields": {
+      "password": "pbkdf2_sha256$1200000$iu5yAE6EAGRCjsn2afWH2r$7zJmnQuvyN9to5rAqwtvAaBkT3CJ+iNEKbLoCSKUCSo=",
+      "username": "oulai_michel",
+      "first_name": "Michel",
+      "last_name": "Oulai",
+      "email": "o.michel@gmail.com",
+      "role": "CLIENT",
+      "phone": "+225 07 44 55 66 77",
+      "region": "Bouaké",
+      "is_staff": false,
+      "is_superuser": false,
+      "is_active": true,
+      "groups": [],
+      "user_permissions": [],
+      "date_joined": "2026-01-18T08:00:00Z",
+      "last_login": null
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": 8,
+    "fields": {
+      "password": "pbkdf2_sha256$1200000$iu5yAE6EAGRCjsn2afWH2r$7zJmnQuvyN9to5rAqwtvAaBkT3CJ+iNEKbLoCSKUCSo=",
+      "username": "yao_christ",
+      "first_name": "Christ",
+      "last_name": "Yao",
+      "email": "y.christ@gmail.com",
+      "role": "CLIENT",
+      "phone": "+225 07 55 66 77 88",
+      "region": "San-Pédro",
+      "is_staff": false,
+      "is_superuser": false,
+      "is_active": true,
+      "groups": [],
+      "user_permissions": [],
+      "date_joined": "2026-01-20T08:00:00Z",
+      "last_login": null
+    }
+  },
+  {
+    "model": "credits.creditrequest",
+    "pk": 1,
+    "fields": {
+      "client": 4,
+      "agent": 2,
+      "montant": "500000.00",
+      "duree_mois": 6,
+      "taux_interet": "2.50",
+      "status": "DECAISSEE",
+      "motif_refus": null,
+      "score": 78,
+      "document": "",
+      "date_soumission": "2026-02-01T08:00:00Z",
+      "date_decaissement": "2026-02-05",
+      "updated_at": "2026-02-05T10:00:00Z"
+    }
+  },
+  {
+    "model": "credits.creditrequest",
+    "pk": 2,
+    "fields": {
+      "client": 5,
+      "agent": 2,
+      "montant": "300000.00",
+      "duree_mois": 3,
+      "taux_interet": "2.50",
+      "status": "APPROUVEE",
+      "motif_refus": null,
+      "score": 65,
+      "document": "",
+      "date_soumission": "2026-02-10T08:00:00Z",
+      "date_decaissement": null,
+      "updated_at": "2026-02-12T10:00:00Z"
+    }
+  },
+  {
+    "model": "credits.creditrequest",
+    "pk": 3,
+    "fields": {
+      "client": 6,
+      "agent": 3,
+      "montant": "750000.00",
+      "duree_mois": 12,
+      "taux_interet": "2.50",
+      "status": "EN_ANALYSE",
+      "motif_refus": null,
+      "score": null,
+      "document": "",
+      "date_soumission": "2026-03-01T08:00:00Z",
+      "date_decaissement": null,
+      "updated_at": "2026-03-01T08:00:00Z"
+    }
+  },
+  {
+    "model": "credits.creditrequest",
+    "pk": 4,
+    "fields": {
+      "client": 7,
+      "agent": 3,
+      "montant": "200000.00",
+      "duree_mois": 3,
+      "taux_interet": "2.50",
+      "status": "REFUSEE",
+      "motif_refus": "Score de crédit insuffisant — historique de remboursement incomplet.",
+      "score": 32,
+      "document": "",
+      "date_soumission": "2026-02-20T08:00:00Z",
+      "date_decaissement": null,
+      "updated_at": "2026-02-22T10:00:00Z"
+    }
+  },
+  {
+    "model": "credits.creditrequest",
+    "pk": 5,
+    "fields": {
+      "client": 8,
+      "agent": null,
+      "montant": "150000.00",
+      "duree_mois": 3,
+      "taux_interet": "2.50",
+      "status": "SOUMISE",
+      "motif_refus": null,
+      "score": null,
+      "document": "",
+      "date_soumission": "2026-03-10T08:00:00Z",
+      "date_decaissement": null,
+      "updated_at": "2026-03-10T08:00:00Z"
+    }
+  },
+  {
+    "model": "credits.installment",
+    "pk": 1,
+    "fields": {
+      "credit": 1,
+      "numero": 1,
+      "date_prevue": "2026-03-05",
+      "montant_du": "85416.67",
+      "montant_paye": "85416.67",
+      "penalite": "0.00",
+      "status": "PAYEE"
+    }
+  },
+  {
+    "model": "credits.installment",
+    "pk": 2,
+    "fields": {
+      "credit": 1,
+      "numero": 2,
+      "date_prevue": "2026-04-05",
+      "montant_du": "85416.67",
+      "montant_paye": "85416.67",
+      "penalite": "0.00",
+      "status": "PAYEE"
+    }
+  },
+  {
+    "model": "credits.installment",
+    "pk": 3,
+    "fields": {
+      "credit": 1,
+      "numero": 3,
+      "date_prevue": "2026-05-05",
+      "montant_du": "85416.67",
+      "montant_paye": "0.00",
+      "penalite": "5000.00",
+      "status": "EN_RETARD"
+    }
+  },
+  {
+    "model": "credits.installment",
+    "pk": 4,
+    "fields": {
+      "credit": 1,
+      "numero": 4,
+      "date_prevue": "2026-06-05",
+      "montant_du": "85416.67",
+      "montant_paye": "0.00",
+      "penalite": "0.00",
+      "status": "EN_ATTENTE"
+    }
+  },
+  {
+    "model": "credits.installment",
+    "pk": 5,
+    "fields": {
+      "credit": 1,
+      "numero": 5,
+      "date_prevue": "2026-07-05",
+      "montant_du": "85416.67",
+      "montant_paye": "0.00",
+      "penalite": "0.00",
+      "status": "EN_ATTENTE"
+    }
+  },
+  {
+    "model": "credits.installment",
+    "pk": 6,
+    "fields": {
+      "credit": 1,
+      "numero": 6,
+      "date_prevue": "2026-08-05",
+      "montant_du": "85416.65",
+      "montant_paye": "0.00",
+      "penalite": "0.00",
+      "status": "EN_ATTENTE"
+    }
+  },
+  {
+    "model": "credits.installment",
+    "pk": 7,
+    "fields": {
+      "credit": 2,
+      "numero": 1,
+      "date_prevue": "2026-03-10",
+      "montant_du": "102500.00",
+      "montant_paye": "0.00",
+      "penalite": "0.00",
+      "status": "EN_ATTENTE"
+    }
+  },
+  {
+    "model": "credits.installment",
+    "pk": 8,
+    "fields": {
+      "credit": 2,
+      "numero": 2,
+      "date_prevue": "2026-04-10",
+      "montant_du": "102500.00",
+      "montant_paye": "0.00",
+      "penalite": "0.00",
+      "status": "EN_ATTENTE"
+    }
+  },
+  {
+    "model": "credits.installment",
+    "pk": 9,
+    "fields": {
+      "credit": 2,
+      "numero": 3,
+      "date_prevue": "2026-05-10",
+      "montant_du": "102500.00",
+      "montant_paye": "0.00",
+      "penalite": "0.00",
+      "status": "EN_ATTENTE"
+    }
+  },
+  {
+    "model": "repayments.payment",
+    "pk": 1,
+    "fields": {
+      "installment": 1,
+      "agent": 2,
+      "montant_recu": "85416.67",
+      "date_paiement": "2026-03-04",
+      "note": "Paiement reçu en espèces au bureau Yopougon.",
+      "created_at": "2026-03-04T10:00:00Z"
+    }
+  },
+  {
+    "model": "repayments.payment",
+    "pk": 2,
+    "fields": {
+      "installment": 2,
+      "agent": 2,
+      "montant_recu": "85416.67",
+      "date_paiement": "2026-04-03",
+      "note": "Paiement reçu via Mobile Money.",
+      "created_at": "2026-04-03T10:00:00Z"
+    }
+  },
+  {
+    "model": "insurance.insuranceproduct",
+    "pk": 1,
+    "fields": {
+      "nom": "Assurance Vie Essentielle",
+      "type_assurance": "VIE",
+      "description": "Couverture vie de base pour micro-entrepreneurs. Garantit un capital en cas de décès ou d'invalidité totale.",
+      "duree_mois": 12,
+      "prix_mensuel": "5000.00",
+      "is_active": true,
+      "created_at": "2026-01-01T08:00:00Z"
+    }
+  },
+  {
+    "model": "insurance.insuranceproduct",
+    "pk": 2,
+    "fields": {
+      "nom": "Protection Décès-Invalidité Plus",
+      "type_assurance": "DECES",
+      "description": "Couverture complète décès et invalidité permanente. Inclut le remboursement du crédit en cours.",
+      "duree_mois": 24,
+      "prix_mensuel": "8500.00",
+      "is_active": true,
+      "created_at": "2026-01-01T08:00:00Z"
+    }
+  },
+  {
+    "model": "insurance.insuranceproduct",
+    "pk": 3,
+    "fields": {
+      "nom": "Micro-Assurance Solidaire",
+      "type_assurance": "VIE",
+      "description": "Produit accessible aux petits commerçants. Cotisation réduite avec couverture essentielle.",
+      "duree_mois": 6,
+      "prix_mensuel": "2500.00",
+      "is_active": true,
+      "created_at": "2026-01-01T08:00:00Z"
+    }
+  },
+  {
+    "model": "insurance.policy",
+    "pk": 1,
+    "fields": {
+      "client": 4,
+      "produit": 1,
+      "beneficiaire_nom": "Jean Aloukou",
+      "beneficiaire_contact": "+225 07 99 88 77 66",
+      "date_debut": "2026-02-01",
+      "date_fin": "2027-02-01",
+      "status": "ACTIVE",
+      "created_at": "2026-02-01T08:00:00Z"
+    }
+  },
+  {
+    "model": "insurance.policy",
+    "pk": 2,
+    "fields": {
+      "client": 5,
+      "produit": 2,
+      "beneficiaire_nom": "Marie Gauli",
+      "beneficiaire_contact": "+225 07 88 77 66 55",
+      "date_debut": "2026-02-10",
+      "date_fin": "2028-02-10",
+      "status": "ACTIVE",
+      "created_at": "2026-02-10T08:00:00Z"
+    }
+  },
+  {
+    "model": "insurance.policy",
+    "pk": 3,
+    "fields": {
+      "client": 6,
+      "produit": 3,
+      "beneficiaire_nom": "Paul Ehoussou",
+      "beneficiaire_contact": "+225 07 77 66 55 44",
+      "date_debut": "2025-06-01",
+      "date_fin": "2025-12-01",
+      "status": "EXPIREE",
+      "created_at": "2025-06-01T08:00:00Z"
+    }
+  },
+  {
+    "model": "notifications.notification",
+    "pk": 1,
+    "fields": {
+      "destinataire": 4,
+      "type": "CREDIT",
+      "titre": "Crédit approuvé !",
+      "message": "Votre demande de crédit de 500 000 FCFA a été approuvée. Le décaissement sera effectué sous 48h.",
+      "is_read": true,
+      "created_at": "2026-02-03T10:00:00Z"
+    }
+  },
+  {
+    "model": "notifications.notification",
+    "pk": 2,
+    "fields": {
+      "destinataire": 4,
+      "type": "REMBOURSEMENT",
+      "titre": "Échéance en retard",
+      "message": "Votre échéance du 05/05/2026 n'a pas été réglée. Une pénalité de 5 000 FCFA a été appliquée.",
+      "is_read": false,
+      "created_at": "2026-05-06T08:00:00Z"
+    }
+  },
+  {
+    "model": "notifications.notification",
+    "pk": 3,
+    "fields": {
+      "destinataire": 5,
+      "type": "CREDIT",
+      "titre": "Crédit en cours d'analyse",
+      "message": "Votre demande de crédit de 300 000 FCFA est en cours d'analyse par notre équipe.",
+      "is_read": false,
+      "created_at": "2026-02-11T08:00:00Z"
+    }
+  },
+  {
+    "model": "notifications.notification",
+    "pk": 4,
+    "fields": {
+      "destinataire": 7,
+      "type": "CREDIT",
+      "titre": "Demande de crédit refusée",
+      "message": "Votre demande de crédit de 200 000 FCFA a été refusée. Motif : score de crédit insuffisant.",
+      "is_read": false,
+      "created_at": "2026-02-22T10:00:00Z"
+    }
+  },
+  {
+    "model": "notifications.notification",
+    "pk": 5,
+    "fields": {
+      "destinataire": 4,
+      "type": "ASSURANCE",
+      "titre": "Police d'assurance active",
+      "message": "Votre police Assurance Vie Essentielle est désormais active jusqu'au 01/02/2027.",
+      "is_read": true,
+      "created_at": "2026-02-01T09:00:00Z"
+    }
+  },
+  {
+    "model": "chat.conversation",
+    "pk": 1,
+    "fields": {
+      "client": 4,
+      "agent": 2,
+      "status": "EN_COURS",
+      "created_at": "2026-03-01T09:00:00Z",
+      "updated_at": "2026-03-01T09:30:00Z"
+    }
+  },
+  {
+    "model": "chat.conversation",
+    "pk": 2,
+    "fields": {
+      "client": 6,
+      "agent": null,
+      "status": "OUVERTE",
+      "created_at": "2026-03-10T14:00:00Z",
+      "updated_at": "2026-03-10T14:00:00Z"
+    }
+  },
+  {
+    "model": "chat.conversation",
+    "pk": 3,
+    "fields": {
+      "client": 5,
+      "agent": 3,
+      "status": "RESOLUE",
+      "created_at": "2026-02-15T10:00:00Z",
+      "updated_at": "2026-02-15T11:00:00Z"
+    }
+  },
+  {
+    "model": "chat.message",
+    "pk": 1,
+    "fields": {
+      "conversation": 1,
+      "expediteur": 4,
+      "contenu": "Bonjour, j'aimerais avoir des informations sur le statut de mon remboursement.",
+      "fichier": "",
+      "is_auto": false,
+      "created_at": "2026-03-01T09:00:00Z"
+    }
+  },
+  {
+    "model": "chat.message",
+    "pk": 2,
+    "fields": {
+      "conversation": 1,
+      "expediteur": 2,
+      "contenu": "Bonjour M. Aloukou, je consulte votre dossier immédiatement.",
+      "fichier": "",
+      "is_auto": false,
+      "created_at": "2026-03-01T09:10:00Z"
+    }
+  },
+  {
+    "model": "chat.message",
+    "pk": 3,
+    "fields": {
+      "conversation": 1,
+      "expediteur": 2,
+      "contenu": "Vos deux premières échéances ont bien été enregistrées. La troisième du 05/05 est en retard avec une pénalité de 5 000 FCFA.",
+      "fichier": "",
+      "is_auto": false,
+      "created_at": "2026-03-01T09:15:00Z"
+    }
+  },
+  {
+    "model": "chat.message",
+    "pk": 4,
+    "fields": {
+      "conversation": 1,
+      "expediteur": 4,
+      "contenu": "D'accord merci, je vais régulariser cette semaine.",
+      "fichier": "",
+      "is_auto": false,
+      "created_at": "2026-03-01T09:20:00Z"
+    }
+  },
+  {
+    "model": "chat.message",
+    "pk": 5,
+    "fields": {
+      "conversation": 2,
+      "expediteur": 6,
+      "contenu": "Bonjour, je voudrais savoir comment renouveler ma police d'assurance expirée.",
+      "fichier": "",
+      "is_auto": false,
+      "created_at": "2026-03-10T14:00:00Z"
+    }
+  },
+  {
+    "model": "chat.message",
+    "pk": 6,
+    "fields": {
+      "conversation": 3,
+      "expediteur": 5,
+      "contenu": "Bonjour, quand est-ce que mon crédit sera décaissé ?",
+      "fichier": "",
+      "is_auto": false,
+      "created_at": "2026-02-15T10:00:00Z"
+    }
+  },
+  {
+    "model": "chat.message",
+    "pk": 7,
+    "fields": {
+      "conversation": 3,
+      "expediteur": 3,
+      "contenu": "Bonjour M. Gauli, votre dossier est approuvé. Le décaissement se fera dans les 48h suivant la signature du contrat.",
+      "fichier": "",
+      "is_auto": false,
+      "created_at": "2026-02-15T10:30:00Z"
+    }
+  },
+  {
+    "model": "chat.message",
+    "pk": 8,
+    "fields": {
+      "conversation": 3,
+      "expediteur": 5,
+      "contenu": "Merci beaucoup !",
+      "fichier": "",
+      "is_auto": false,
+      "created_at": "2026-02-15T10:35:00Z"
+    }
+  }
+]

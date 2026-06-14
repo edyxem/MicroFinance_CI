@@ -1,6 +1,7 @@
 django>=5.0
 djangorestframework
 djangorestframework-simplejwt
+daphne
 channels
 channels-redis
 drf-spectacular
