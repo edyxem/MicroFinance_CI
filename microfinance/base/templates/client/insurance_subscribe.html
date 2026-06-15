@@ -1,0 +1,110 @@
+{% extends "common/base.html" %}
+{% block title %}Souscrire — COFINANCE CI{% endblock %}
+
+{% block content %}
+<div class="container-sm">
+  <div class="card">
+    <h2>Souscrire à une assurance</h2>
+    <div id="msg"></div>
+
+    <div class="form-group">
+      <label>Produit *</label>
+      <select id="produit">
+        <option value="">— Chargement… —</option>
+      </select>
+    </div>
+
+    <div id="produit-info" style="display:none;" class="alert alert-info" style="margin-bottom:1rem;"></div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nom du bénéficiaire *</label>
+        <input type="text" id="beneficiaire_nom" placeholder="ex : Kouassi Marie">
+      </div>
+      <div class="form-group">
+        <label>Contact du bénéficiaire *</label>
+        <input type="text" id="beneficiaire_contact" placeholder="+225 07 00 00 00 00">
+      </div>
+    </div>
+
+    <div style="display:flex;gap:.75rem;margin-top:.5rem;">
+      <button class="btn btn-primary" id="btn-sub">Confirmer la souscription</button>
+      <a href="/client/insurance/" class="btn btn-neutral">Annuler</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let products = [];
+
+async function loadProducts() {
+  const res  = await apiFetch('/api/insurance/products/');
+  products   = await res.json();
+  const sel  = document.getElementById('produit');
+  sel.innerHTML = '<option value="">— Choisir un produit —</option>' +
+    products.map(p => `<option value="${p.id}">${p.nom} (${fmtMoney(p.prix_mensuel)}/mois)</option>`).join('');
+
+  // Pré-sélectionner si ?produit=X dans l'URL
+  const params = new URLSearchParams(window.location.search);
+  const pre    = params.get('produit');
+  if (pre) { sel.value = pre; sel.dispatchEvent(new Event('change')); }
+}
+
+document.getElementById('produit').addEventListener('change', function() {
+  const p   = products.find(x => x.id == this.value);
+  const inf = document.getElementById('produit-info');
+  if (p) {
+    inf.style.display = '';
+    inf.innerHTML = `<strong>${p.nom}</strong> — ${p.description}<br>
+      Durée : <strong>${p.duree_mois} mois</strong> · ${fmtMoney(p.prix_mensuel)}/mois`;
+  } else {
+    inf.style.display = 'none';
+  }
+});
+
+document.getElementById('btn-sub').addEventListener('click', async () => {
+  const msg     = document.getElementById('msg');
+  msg.innerHTML = '';
+
+  const produit              = document.getElementById('produit').value;
+  const beneficiaire_nom     = document.getElementById('beneficiaire_nom').value.trim();
+  const beneficiaire_contact = document.getElementById('beneficiaire_contact').value.trim();
+
+  if (!produit || !beneficiaire_nom || !beneficiaire_contact) {
+    msg.innerHTML = '<div class="alert alert-error">Tous les champs sont obligatoires.</div>';
+    return;
+  }
+
+  const btn = document.getElementById('btn-sub');
+  btn.disabled = true;
+  btn.textContent = 'Confirmation…';
+
+  try {
+    const res  = await apiFetch('/api/insurance/policies/', {
+      method: 'POST',
+      body: JSON.stringify({ produit, beneficiaire_nom, beneficiaire_contact })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      const errors = Object.values(data).flat().join(' ');
+      msg.innerHTML = `<div class="alert alert-error">${errors}</div>`;
+      return;
+    }
+
+    flash('Souscription confirmée !', 'success');
+    setTimeout(() => window.location.href = '/client/insurance/', 1200);
+
+  } catch {
+    msg.innerHTML = '<div class="alert alert-error">Erreur réseau.</div>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Confirmer la souscription';
+  }
+});
+
+loadProducts();
+</script>
+{% endblock %}

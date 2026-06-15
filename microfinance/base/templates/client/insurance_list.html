@@ -1,0 +1,85 @@
+{% extends "common/base.html" %}
+{% block title %}Mon assurance — COFINANCE CI{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="card-header" style="margin-bottom:1rem;">
+    <h1 style="font-size:1.2rem;color:#1a1a2e;">Mes polices d'assurance</h1>
+    <a href="/client/insurance/subscribe/" class="btn btn-primary btn-sm">+ Souscrire</a>
+  </div>
+
+  <!-- Polices actives -->
+  <div class="card">
+    <h2>Mes polices</h2>
+    <div id="policies-content"><div class="loading">Chargement</div></div>
+  </div>
+
+  <!-- Catalogue -->
+  <div class="card">
+    <h2>Catalogue des produits disponibles</h2>
+    <div id="products-content"><div class="loading">Chargement</div></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function loadPolicies() {
+  const res  = await apiFetch('/api/insurance/policies/');
+  const data = await res.json();
+  const el   = document.getElementById('policies-content');
+
+  if (!data.length) {
+    el.innerHTML = '<p style="color:#888;font-size:.88rem;">Aucune police souscrite.</p>';
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Produit</th><th>Type</th><th>Bénéficiaire</th><th>Début</th><th>Fin</th><th>Statut</th></tr>
+        </thead>
+        <tbody>
+          ${data.map(p => `
+            <tr>
+              <td><strong>${p.produit_detail?.nom}</strong></td>
+              <td>${p.produit_detail?.type_assurance}</td>
+              <td>${p.beneficiaire_nom}<br><small style="color:#888;">${p.beneficiaire_contact}</small></td>
+              <td>${fmtDate(p.date_debut)}</td>
+              <td>${fmtDate(p.date_fin)}</td>
+              <td>${badge(p.status)}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+async function loadProducts() {
+  const res  = await apiFetch('/api/insurance/products/');
+  const data = await res.json();
+  const el   = document.getElementById('products-content');
+
+  if (!data.length) {
+    el.innerHTML = '<p style="color:#888;">Aucun produit disponible.</p>';
+    return;
+  }
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;">
+      ${data.map(p => `
+        <div style="border:1px solid #e0e0e0;border-radius:8px;padding:1rem;">
+          <div style="font-size:.72rem;font-weight:600;color:#888;text-transform:uppercase;">${p.type_assurance}</div>
+          <div style="font-weight:700;margin:.25rem 0;">${p.nom}</div>
+          <div style="font-size:.83rem;color:#555;margin-bottom:.75rem;">${p.description}</div>
+          <div style="font-size:.85rem;"><strong>${fmtMoney(p.prix_mensuel)}</strong> / mois</div>
+          <div style="font-size:.8rem;color:#888;margin-bottom:.75rem;">Durée : ${p.duree_mois} mois</div>
+          <a href="/client/insurance/subscribe/?produit=${p.id}" class="btn btn-sm btn-primary">Souscrire</a>
+        </div>`).join('')}
+    </div>`;
+}
+
+loadPolicies();
+loadProducts();
+</script>
+{% endblock %}

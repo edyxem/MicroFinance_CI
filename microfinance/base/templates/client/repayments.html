@@ -1,0 +1,62 @@
+{% extends "common/base.html" %}
+{% block title %}Mes remboursements — COFINANCE CI{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h1 style="font-size:1.2rem;color:#1a1a2e;margin-bottom:1rem;">Historique des paiements</h1>
+  <div id="content"><div class="loading">Chargement</div></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function load() {
+  const el = document.getElementById('content');
+
+  // 1. Récupérer les crédits pour avoir les IDs
+  const resC = await apiFetch('/api/credits/');
+  const credits = await resC.json();
+
+  if (!credits.length) {
+    el.innerHTML = '<div class="card"><p style="color:#888;">Aucun crédit trouvé.</p></div>';
+    return;
+  }
+
+  // 2. Pour chaque crédit, charger les paiements
+  let html = '';
+  for (const c of credits) {
+    const resP   = await apiFetch(`/api/repayments/credits/${c.id}/`);
+    const payments = await resP.json();
+
+    if (!payments.length) continue;
+
+    const rows = payments.map(p => `
+      <tr>
+        <td>${fmtDate(p.date_paiement)}</td>
+        <td>Échéance #${p.installment_detail?.numero ?? p.installment}</td>
+        <td><strong>${fmtMoney(p.montant_recu)}</strong></td>
+        <td>${p.methode_paiement}</td>
+        <td>${p.reference_transaction || '—'}</td>
+        <td>${p.agent_detail?.username || '—'}</td>
+      </tr>`).join('');
+
+    html += `
+      <div class="card">
+        <h2>Crédit #${c.id} — ${fmtMoney(c.montant)} ${badge(c.status)}</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Date</th><th>Échéance</th><th>Montant reçu</th><th>Méthode</th><th>Référence</th><th>Agent</th></tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+  el.innerHTML = html || '<div class="card"><p style="color:#888;">Aucun paiement enregistré.</p></div>';
+}
+
+load();
+</script>
+{% endblock %}

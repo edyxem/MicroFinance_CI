@@ -1,3 +1,5 @@
+from django.views import View
+from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -101,3 +103,7 @@ class PolicyDetailView(APIView):
         if request.user.role == 'CLIENT' and policy.client != request.user:
             return Response({"error": "Accès refusé."}, status=status.HTTP_403_FORBIDDEN)
         return Response(PolicySerializer(policy).data)
+
+class InsurancePageView(View):
+    def get(self, request):
+        return render(request, 'client/insurance.html')

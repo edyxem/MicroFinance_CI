@@ -1,0 +1,200 @@
+{% extends "common/base.html" %}
+{% block title %}Support — COFINANCE CI{% endblock %}
+
+{% block content %}
+<div class="container-sm">
+  <h1 style="font-size:1.2rem;color:#1a1a2e;margin-bottom:1rem;">Support client</h1>
+
+  <!-- État : pas de conversation -->
+  <div id="view-start" class="card" style="text-align:center;display:none;">
+    <p style="color:#666;margin-bottom:1rem;">Vous n'avez pas de conversation ouverte.</p>
+    <button class="btn btn-primary" id="btn-open">Ouvrir une conversation</button>
+  </div>
+
+  <!-- État : conversation active -->
+  <div id="view-chat" style="display:none;">
+    <div class="card" style="padding-bottom:.5rem;">
+      <div class="card-header">
+        <div>
+          <strong id="chat-title">Conversation #—</strong><br>
+          <small style="color:#888;" id="chat-status"></small>
+        </div>
+        <div style="display:flex;align-items:center;gap:.5rem;">
+          <span class="presence-dot offline" id="agent-dot"></span>
+          <span id="agent-name" style="font-size:.82rem;color:#666;">Agent non assigné</span>
+        </div>
+      </div>
+
+      <div class="typing-indicator" id="typing-indicator"></div>
+
+      <div class="chat-box" id="chat-box"></div>
+
+      <div id="chat-closed-notice" style="display:none;" class="alert alert-warn">
+        Cette conversation est résolue. <a href="#" id="btn-new-conv">Ouvrir une nouvelle</a>
+      </div>
+
+      <div class="chat-input-row" id="chat-input-row">
+        <input type="text" id="chat-input" placeholder="Votre message…">
+        <button class="btn btn-primary" id="btn-send">Envoyer</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="view-loading"><div class="loading">Chargement</div></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const user = getUser();
+let ws      = null;
+let convId  = null;
+
+// ── Chargement initial ────────────────────────────────────
+async function init() {
+  const res  = await apiFetch('/api/chat/');
+  const data = await res.json();
+
+  document.getElementById('view-loading').style.display = 'none';
+
+  // Prendre la plus récente conversation non résolue, sinon la dernière
+  const active = data.find(c => c.status !== 'RESOLUE') || data[0];
+
+  if (!active) {
+    document.getElementById('view-start').style.display = '';
+    return;
+  }
+
+  openChat(active);
+}
+
+// ── Ouvrir une conversation existante ────────────────────
+async function openChat(conv) {
+  convId = conv.id;
+  document.getElementById('view-chat').style.display = '';
+
+  document.getElementById('chat-title').textContent = `Conversation #${conv.id}`;
+  document.getElementById('chat-status').textContent = conv.status;
+
+  if (conv.agent_detail) {
+    document.getElementById('agent-name').textContent = conv.agent_detail.username;
+  }
+
+  if (conv.status === 'RESOLUE') {
+    document.getElementById('chat-closed-notice').style.display = '';
+    document.getElementById('chat-input-row').style.display = 'none';
+  }
+
+  await loadMessages();
+  connectWS();
+}
+
+// ── Charger l'historique ──────────────────────────────────
+async function loadMessages() {
+  const res  = await apiFetch(`/api/chat/${convId}/messages/`);
+  const msgs = await res.json();
+  const box  = document.getElementById('chat-box');
+  box.innerHTML = '';
+  msgs.forEach(appendMessage);
+  box.scrollTop = box.scrollHeight;
+}
+
+function appendMessage(m) {
+  const box  = document.getElementById('chat-box');
+  const isMe = m.expediteur === user.id || m.expediteur_id === user.id;
+  const cls  = m.is_auto ? 'auto' : (isMe ? 'me' : 'them');
+  const name = m.expediteur_username || m.expediteur_detail?.username || '';
+  const time = fmtDatetime(m.created_at);
+
+  const div  = document.createElement('div');
+  div.className = `msg ${cls}`;
+  div.innerHTML = `
+    <div class="meta">${isMe ? 'Vous' : name} · ${time}</div>
+    <div class="bubble">${escHtml(m.contenu)}</div>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── WebSocket ─────────────────────────────────────────────
+function connectWS() {
+  const token = localStorage.getItem('access');
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}/ws/chat/${convId}/?token=${token}`);
+
+  ws.onmessage = ({ data }) => {
+    const msg = JSON.parse(data);
+
+    if (msg.type === 'chat_message') {
+      appendMessage(msg);
+    } else if (msg.type === 'typing') {
+      const ind = document.getElementById('typing-indicator');
+      ind.textContent = msg.is_typing ? `${msg.username} est en train d'écrire…` : '';
+    } else if (msg.type === 'presence') {
+      const dot  = document.getElementById('agent-dot');
+      const name = document.getElementById('agent-name');
+      dot.className  = `presence-dot ${msg.status}`;
+      if (msg.status === 'online') name.textContent = msg.username;
+    }
+  };
+
+  ws.onclose = () => {
+    // Tentative de reconnexion après 3s si page encore ouverte
+    setTimeout(() => { if (convId) connectWS(); }, 3000);
+  };
+}
+
+// ── Envoi message ─────────────────────────────────────────
+let typingTimer = null;
+
+document.getElementById('chat-input').addEventListener('input', () => {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  ws.send(JSON.stringify({ type: 'typing', is_typing: true }));
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(() => {
+    ws.send(JSON.stringify({ type: 'typing', is_typing: false }));
+  }, 1500);
+});
+
+document.getElementById('btn-send').addEventListener('click', sendMsg);
+document.getElementById('chat-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+});
+
+function sendMsg() {
+  const input   = document.getElementById('chat-input');
+  const contenu = input.value.trim();
+  if (!contenu || !ws || ws.readyState !== WebSocket.OPEN) return;
+  ws.send(JSON.stringify({ type: 'chat_message', contenu }));
+  input.value = '';
+}
+
+// ── Nouvelle conversation ─────────────────────────────────
+document.getElementById('btn-open').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-open');
+  btn.disabled = true;
+  btn.textContent = 'Ouverture…';
+  const res  = await apiFetch('/api/chat/', { method: 'POST' });
+  const conv = await res.json();
+  document.getElementById('view-start').style.display = 'none';
+  openChat(conv);
+});
+
+document.getElementById('btn-new-conv')?.addEventListener('click', async (e) => {
+  e.preventDefault();
+  const res  = await apiFetch('/api/chat/', { method: 'POST' });
+  const conv = await res.json();
+  convId = null;
+  if (ws) ws.close();
+  document.getElementById('chat-closed-notice').style.display = 'none';
+  document.getElementById('chat-input-row').style.display = '';
+  document.getElementById('chat-box').innerHTML = '';
+  openChat(conv);
+});
+
+init();
+</script>
+{% endblock %}

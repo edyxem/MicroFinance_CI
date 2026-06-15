@@ -1,0 +1,114 @@
+{% extends "common/base.html" %}
+{% block title %}Demande de crédit — COFINANCE CI{% endblock %}
+
+{% block content %}
+<div class="container-sm">
+  <div class="card">
+    <h2>Nouvelle demande de crédit</h2>
+    <div id="msg"></div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Montant souhaité (FCFA) *</label>
+        <input type="number" id="montant" placeholder="ex : 150000" min="10000">
+      </div>
+      <div class="form-group">
+        <label>Durée (mois) *</label>
+        <input type="number" id="duree_mois" placeholder="ex : 12" min="1" max="60">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Méthode de décaissement *</label>
+      <select id="methode_decaissement">
+        <option value="CASH">Espèces</option>
+        <option value="ORANGE_MONEY">Orange Money</option>
+        <option value="WAVE">Wave</option>
+        <option value="MTN_MOMO">MTN Mobile Money</option>
+        <option value="MOOV_MONEY">Moov Money</option>
+      </select>
+    </div>
+
+    <div class="form-group" id="grp-numero" style="display:none;">
+      <label>Numéro Mobile Money *</label>
+      <input type="text" id="numero_decaissement" placeholder="+225 07 00 00 00 00">
+    </div>
+
+    <div class="form-group">
+      <label>Document justificatif (optionnel)</label>
+      <input type="file" id="document" accept=".pdf,.jpg,.jpeg,.png">
+    </div>
+
+    <div style="display:flex;gap:.75rem;margin-top:.5rem;">
+      <button class="btn btn-primary" id="btn-submit">Soumettre</button>
+      <a href="/client/credits/" class="btn btn-neutral">Annuler</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Afficher/masquer numéro MM
+document.getElementById('methode_decaissement').addEventListener('change', function() {
+  document.getElementById('grp-numero').style.display =
+    this.value === 'CASH' ? 'none' : '';
+});
+
+document.getElementById('btn-submit').addEventListener('click', async () => {
+  const msg    = document.getElementById('msg');
+  msg.innerHTML = '';
+
+  const montant  = document.getElementById('montant').value;
+  const duree    = document.getElementById('duree_mois').value;
+  const methode  = document.getElementById('methode_decaissement').value;
+  const numero   = document.getElementById('numero_decaissement').value.trim();
+
+  if (!montant || !duree) {
+    msg.innerHTML = '<div class="alert alert-error">Montant et durée sont obligatoires.</div>';
+    return;
+  }
+  if (methode !== 'CASH' && !numero) {
+    msg.innerHTML = '<div class="alert alert-error">Numéro Mobile Money obligatoire pour ce moyen de décaissement.</div>';
+    return;
+  }
+
+  // FormData pour supporter l'upload fichier
+  const body = new FormData();
+  body.append('montant', montant);
+  body.append('duree_mois', duree);
+  body.append('methode_decaissement', methode);
+  if (numero) body.append('numero_decaissement', numero);
+  const doc = document.getElementById('document').files[0];
+  if (doc) body.append('document', doc);
+
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+  btn.textContent = 'Envoi…';
+
+  try {
+    const res = await fetch('/api/credits/', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access') },
+      body
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      const errors = Object.values(data).flat().join(' ');
+      msg.innerHTML = `<div class="alert alert-error">${errors}</div>`;
+      return;
+    }
+
+    flash('Demande soumise avec succès !', 'success');
+    setTimeout(() => window.location.href = `/client/credits/${data.id}/`, 1000);
+
+  } catch {
+    msg.innerHTML = '<div class="alert alert-error">Erreur réseau.</div>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Soumettre';
+  }
+});
+</script>
+{% endblock %}

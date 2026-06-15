@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}COFINANCE CI{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<nav>
+  <span class="brand">💳 COFINANCE CI</span>
+  <div class="nav-links" id="nav-links">
+    <!-- injecté par api.js selon le rôle -->
+  </div>
+</nav>
+
+<div id="flash"></div>
+
+{% block content %}{% endblock %}
+
+<script src="/static/js/api.js"></script>
+{% block extra_js %}{% endblock %}
+
+</body>
+</html>

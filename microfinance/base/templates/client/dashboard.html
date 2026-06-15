@@ -1,0 +1,87 @@
+{% extends "common/base.html" %}
+{% block title %}Mon espace — COFINANCE CI{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <div class="card-header" style="margin-bottom:1rem;">
+    <h1 style="font-size:1.2rem;color:#1a1a2e;" id="welcome-title">Bonjour —</h1>
+    <div class="shortcut-bar">
+      <a href="/client/credits/new/" class="btn btn-primary btn-sm">+ Demander un crédit</a>
+      <a href="/client/chat/" class="btn btn-neutral btn-sm">💬 Support</a>
+    </div>
+  </div>
+
+  <!-- Crédit actif -->
+  <div class="card" id="credit-actif">
+    <h2>Mon crédit en cours</h2>
+    <div id="credit-content"><div class="loading">Chargement</div></div>
+  </div>
+
+  <!-- Prochaines échéances -->
+  <div class="card" id="card-echeances" style="display:none;">
+    <h2>Prochaines échéances</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Date prévue</th><th>Montant dû</th><th>Pénalité</th><th>Payé</th><th>Reste</th><th>Statut</th></tr>
+        </thead>
+        <tbody id="tbody-echeances"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Notifications récentes -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Notifications récentes</h2>
+      <a href="/client/notifications/" style="font-size:.83rem;">Voir tout</a>
+    </div>
+    <div id="notif-content"><div class="loading">Chargement</div></div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const user = getUser();
+
+// Titre de bienvenue
+document.getElementById('welcome-title').textContent =
+  `Bonjour, ${user?.first_name || user?.username} 👋`;
+
+// ── Crédit actif ─────────────────────────────────────────
+async function loadCredit() {
+  const res  = await apiFetch('/api/credits/');
+  const data = await res.json();
+
+  const actifs = data.filter(c => ['SOUMISE','EN_ANALYSE','APPROUVEE','DECAISSEE'].includes(c.status));
+  const el     = document.getElementById('credit-content');
+
+  if (!actifs.length) {
+    el.innerHTML = `
+      <p style="color:#888;font-size:.88rem;">Aucun crédit actif.</p>
+      <a href="/client/credits/new/" class="btn btn-primary btn-sm" style="margin-top:.5rem;">Faire une demande</a>`;
+    return;
+  }
+
+  const c = actifs[0];
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.75rem;margin-bottom:.75rem;">
+      <div><div style="font-size:.75rem;color:#888;">Montant</div><strong>${fmtMoney(c.montant)}</strong></div>
+      <div><div style="font-size:.75rem;color:#888;">Durée</div><strong>${c.duree_mois} mois</strong></div>
+      <div><div style="font-size:.75rem;color:#888;">Taux</div><strong>${c.taux_interet}%</strong></div>
+      <div><div style="font-size:.75rem;color:#888;">Statut</div>${badge(c.status)}</div>
+      ${c.score ? `<div><div style="font-size:.75rem;color:#888;">Score</div><strong>${c.score}/100</strong></div>` : ''}
+    </div>
+    <a href="/client/credits/${c.id}/" class="btn btn-neutral btn-sm">Voir le détail</a>
+  `;
+
+  // Échéances si décaissé
+  if (c.status === 'DECAISSEE' && c.installments?.length) {
+    const prochaines = c.installments.filter(e => e.status !== 'PAYEE').slice(0, 4);
+    if (prochaines.length) {
+      document.getElementById('card-echeances').style.display = '';
+      const tbody = document.getElementById('tbody-echeances');
+      tbody.innerHTML =

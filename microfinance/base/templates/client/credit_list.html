@@ -1,0 +1,58 @@
+{% extends "common/base.html" %}
+{% block title %}Mes crédits — COFINANCE CI{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="card-header" style="margin-bottom:1rem;">
+    <h1 style="font-size:1.2rem;color:#1a1a2e;">Mes demandes de crédit</h1>
+    <a href="/client/credits/new/" class="btn btn-primary btn-sm" id="btn-new">+ Nouvelle demande</a>
+  </div>
+
+  <div class="card">
+    <div id="credits-content"><div class="loading">Chargement</div></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function load() {
+  const res  = await apiFetch('/api/credits/');
+  const data = await res.json();
+  const el   = document.getElementById('credits-content');
+
+  // Masquer bouton si crédit actif
+  const actif = data.some(c => ['APPROUVEE','DECAISSEE'].includes(c.status));
+  if (actif) document.getElementById('btn-new').style.display = 'none';
+
+  if (!data.length) {
+    el.innerHTML = `<p style="color:#888;">Aucune demande. <a href="/client/credits/new/">Faire une demande</a></p>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Montant</th><th>Durée</th><th>Taux</th><th>Soumis le</th><th>Statut</th><th>Score</th><th></th></tr>
+        </thead>
+        <tbody>
+          ${data.map(c => `
+            <tr>
+              <td>#${c.id}</td>
+              <td>${fmtMoney(c.montant)}</td>
+              <td>${c.duree_mois} mois</td>
+              <td>${c.taux_interet}%</td>
+              <td>${fmtDate(c.date_soumission)}</td>
+              <td>${badge(c.status)}</td>
+              <td>${c.score ?? '—'}</td>
+              <td><a href="/client/credits/${c.id}/" class="btn btn-sm btn-neutral">Détail</a></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+load();
+</script>
+{% endblock %}

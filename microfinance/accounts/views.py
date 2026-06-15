@@ -1,3 +1,5 @@
+from django.views import View
+from django.shortcuts import render, redirect
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -165,3 +167,18 @@ class UserToggleActiveView(APIView):
         user.save()
         state = "activé" if user.is_active else "désactivé"
         return Response({"message": f"Compte {state} avec succès."})
+
+# ── Pages HTML (pour les clients) ───────────────────────────────────
+class LoginPageView(View):
+    def get(self, request):
+        if request.user.is_authenticated:
+            return redirect('home')
+        return render(request, 'common/login.html')
+
+class RegisterPageView(View):
+    def get(self, request):
+        return render(request, 'common/register.html')
+
+class LogoutPageView(View):
+    def get(self, request):
+        return render(request, 'common/logout.html')

@@ -1,0 +1,30 @@
+{% extends "common/base.html" %}
+{% block title %}Bienvenue — COFINANCE CI{% endblock %}
+
+{% block content %}
+<div class="container-sm" style="text-align:center; padding-top: 4rem;">
+  <h1 style="font-size:2rem; color:#1a1a2e; margin-bottom:.5rem;">COFINANCE CI</h1>
+  <p style="color:#666; margin-bottom:2rem;">Plateforme digitale de microfinance et d'assurance mobile</p>
+  <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+    <a href="/login/" class="btn btn-primary">Se connecter</a>
+    <a href="/register/" class="btn btn-neutral">Créer un compte</a>
+  </div>
+  <div style="margin-top:3rem; display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1rem; text-align:left;">
+    <div class="card">
+      <div style="font-size:1.5rem;margin-bottom:.5rem;">📋</div>
+      <strong>Microcrédits</strong>
+      <p style="font-size:.83rem;color:#666;margin-top:.3rem;">Soumettez et suivez vos demandes en ligne</p>
+    </div>
+    <div class="card">
+      <div style="font-size:1.5rem;margin-bottom:.5rem;">🛡️</div>
+      <strong>Assurance mobile</strong>
+      <p style="font-size:.83rem;color:#666;margin-top:.3rem;">Souscrivez une police directement depuis votre espace</p>
+    </div>
+    <div class="card">
+      <div style="font-size:1.5rem;margin-bottom:.5rem;">💬</div>
+      <strong>Support en temps réel</strong>
+      <p style="font-size:.83rem;color:#666;margin-top:.3rem;">Discutez avec un agent via notre chat intégré</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

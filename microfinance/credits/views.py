@@ -1,3 +1,5 @@
+from django.views import View
+from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -145,3 +147,29 @@ class InstallmentListView(APIView):
         installments = credit.installments.all()
         serializer = InstallmentSerializer(installments, many=True)
         return Response(serializer.data)
+    
+
+# Les vues de paiement sont dans microfinance/repayments/views.py pour éviter les dépendances circulaires avec notifications.
+class ClientDashboardView(View):
+    def get(self, request):
+        return render(request, 'client/dashboard.html')
+
+class AgentDashboardView(View):
+    def get(self, request):
+        return render(request, 'agent/dashboard.html')
+
+class AdminDashboardView(View):
+    def get(self, request):
+        return render(request, 'admin/dashboard.html')
+
+class CreditListPageView(View):
+    def get(self, request):
+        return render(request, 'client/credits.html')
+
+class CreditFormView(View):
+    def get(self, request):
+        return render(request, 'client/credit_form.html')
+
+class CreditDetailPageView(View):
+    def get(self, request, pk):
+        return render(request, 'client/credit_detail.html', {'credit_id': pk})

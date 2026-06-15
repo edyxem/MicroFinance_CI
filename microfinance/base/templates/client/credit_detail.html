@@ -1,0 +1,94 @@
+{% extends "common/base.html" %}
+{% block title %}Détail crédit — COFINANCE CI{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div style="margin-bottom:1rem;">
+    <a href="/client/credits/" style="font-size:.85rem;">← Retour à mes crédits</a>
+  </div>
+
+  <div id="detail-content"><div class="loading">Chargement</div></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Récupérer l'ID dans l'URL : /client/credits/5/
+const creditId = window.location.pathname.split('/').filter(Boolean).pop();
+
+async function load() {
+  const res  = await apiFetch(`/api/credits/${creditId}/`);
+  if (!res || res.status === 404) {
+    document.getElementById('detail-content').innerHTML =
+      '<div class="alert alert-error">Crédit introuvable.</div>';
+    return;
+  }
+  const c = await res.json();
+  render(c);
+}
+
+function render(c) {
+  const el = document.getElementById('detail-content');
+
+  const infoRows = [
+    ['Montant',        fmtMoney(c.montant)],
+    ['Durée',          `${c.duree_mois} mois`],
+    ['Taux d\'intérêt', `${c.taux_interet}%`],
+    ['Statut',         badge(c.status)],
+    ['Score',          c.score ? `${c.score}/100` : '—'],
+    ['Soumis le',      fmtDatetime(c.date_soumission)],
+    ['Décaissement',   c.date_decaissement ? fmtDate(c.date_decaissement) : '—'],
+    ['Méthode',        c.methode_decaissement],
+    ['Agent',          c.agent_detail?.username || '—'],
+  ].map(([k,v]) => `
+    <tr>
+      <td style="color:#666;width:160px;font-size:.85rem;">${k}</td>
+      <td>${v}</td>
+    </tr>`).join('');
+
+  let motifHtml = '';
+  if (c.status === 'REFUSEE' && c.motif_refus) {
+    motifHtml = `<div class="alert alert-error" style="margin-top:.75rem;"><strong>Motif de refus :</strong> ${c.motif_refus}</div>`;
+  }
+
+  let echeancierHtml = '';
+  if (c.installments?.length) {
+    const rows = c.installments.map(e => `
+      <tr>
+        <td>${e.numero}</td>
+        <td>${fmtDate(e.date_prevue)}</td>
+        <td>${fmtMoney(e.montant_du)}</td>
+        <td>${e.penalite > 0 ? fmtMoney(e.penalite) : '—'}</td>
+        <td>${fmtMoney(e.montant_paye)}</td>
+        <td><strong>${fmtMoney(e.reste_a_payer)}</strong></td>
+        <td>${badge(e.status)}</td>
+      </tr>`).join('');
+    echeancierHtml = `
+      <div class="card">
+        <h2>Échéancier de remboursement</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>#</th><th>Date prévue</th><th>Montant dû</th><th>Pénalité</th><th>Payé</th><th>Reste</th><th>Statut</th></tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+  el.innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <h2>Crédit #${c.id}</h2>
+        ${badge(c.status)}
+      </div>
+      <table style="width:100%;">${infoRows}</table>
+      ${motifHtml}
+    </div>
+    ${echeancierHtml}`;
+}
+
+load();
+</script>
+{% endblock %}

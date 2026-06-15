@@ -1,0 +1,82 @@
+{% extends "common/base.html" %}
+{% block title %}Notifications — COFINANCE CI{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="card-header" style="margin-bottom:1rem;">
+    <h1 style="font-size:1.2rem;color:#1a1a2e;">Notifications</h1>
+    <button class="btn btn-sm btn-neutral" id="btn-read-all">Tout marquer comme lu</button>
+  </div>
+
+  <!-- Filtre par type -->
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+    <button class="btn btn-sm btn-primary" data-type="" onclick="filterType(this, '')">Tout</button>
+    <button class="btn btn-sm btn-neutral" data-type="CREDIT" onclick="filterType(this, 'CREDIT')">Crédit</button>
+    <button class="btn btn-sm btn-neutral" data-type="REMBOURSEMENT" onclick="filterType(this, 'REMBOURSEMENT')">Remboursement</button>
+    <button class="btn btn-sm btn-neutral" data-type="ASSURANCE" onclick="filterType(this, 'ASSURANCE')">Assurance</button>
+    <button class="btn btn-sm btn-neutral" data-type="SUPPORT" onclick="filterType(this, 'SUPPORT')">Support</button>
+    <button class="btn btn-sm btn-neutral" data-type="SYSTEME" onclick="filterType(this, 'SYSTEME')">Système</button>
+  </div>
+
+  <div class="card" id="notif-card">
+    <div id="notif-list"><div class="loading">Chargement</div></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let allNotifs = [];
+
+async function load(type = '') {
+  const url = '/api/notifications/' + (type ? `?type=${type}` : '');
+  const res  = await apiFetch(url);
+  allNotifs  = await res.json();
+  render(allNotifs);
+}
+
+function render(notifs) {
+  const el = document.getElementById('notif-list');
+  if (!notifs.length) {
+    el.innerHTML = '<p style="color:#888;">Aucune notification.</p>';
+    return;
+  }
+
+  el.innerHTML = notifs.map(n => `
+    <div class="notif-item ${n.is_read ? 'read' : ''}" id="notif-${n.id}">
+      <div class="notif-body">
+        <div class="notif-title">
+          <span class="badge" style="background:#e3f2fd;color:#1565c0;font-size:.7rem;margin-right:.4rem;">${n.type}</span>
+          ${n.titre}
+        </div>
+        <div class="notif-msg">${n.message}</div>
+        <div class="notif-date">${fmtDatetime(n.created_at)}</div>
+      </div>
+      ${!n.is_read
+        ? `<button class="btn btn-sm btn-neutral" onclick="markRead(${n.id})">Lu</button>`
+        : ''}
+    </div>`).join('');
+}
+
+async function markRead(id) {
+  await apiFetch(`/api/notifications/${id}/read/`, { method: 'POST' });
+  const item = document.getElementById(`notif-${id}`);
+  item.classList.add('read');
+  item.querySelector('button')?.remove();
+}
+
+document.getElementById('btn-read-all').addEventListener('click', async () => {
+  await apiFetch('/api/notifications/read-all/', { method: 'POST' });
+  flash('Toutes les notifications marquées comme lues.', 'success');
+  load();
+});
+
+function filterType(btn, type) {
+  document.querySelectorAll('[data-type]').forEach(b => b.className = 'btn btn-sm btn-neutral');
+  btn.className = 'btn btn-sm btn-primary';
+  load(type);
+}
+
+load();
+</script>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends "common/base.html" %}
+{% block title %}Connexion — COFINANCE CI{% endblock %}
+
+{% block content %}
+<div class="container-sm">
+  <div class="card" style="margin-top:2rem;">
+    <h2>Connexion</h2>
+    <div id="msg"></div>
+
+    <div class="form-group">
+      <label>Nom d'utilisateur</label>
+      <input type="text" id="username" placeholder="username" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label>Mot de passe</label>
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary btn-block" id="btn-login">Se connecter</button>
+
+    <p style="text-align:center;margin-top:1rem;font-size:.85rem;">
+      Pas encore de compte ? <a href="/register/">S'inscrire</a>
+    </p>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('btn-login').addEventListener('click', async () => {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  const msg      = document.getElementById('msg');
+  msg.innerHTML  = '';
+
+  if (!username || !password) {
+    msg.innerHTML = '<div class="alert alert-error">Remplissez tous les champs.</div>';
+    return;
+  }
+
+  const btn = document.getElementById('btn-login');
+  btn.disabled = true;
+  btn.textContent = 'Connexion…';
+
+  try {
+    const res  = await fetch('/api/auth/login/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      msg.innerHTML = `<div class="alert alert-error">${data.error || 'Erreur de connexion.'}</div>`;
+      return;
+    }
+
+    // Stocker les tokens + infos user
+    localStorage.setItem('access',  data.access);
+    localStorage.setItem('refresh', data.refresh);
+    localStorage.setItem('user',    JSON.stringify(data.user));
+
+    // Redirection selon le rôle
+    const role = data.user.role;
+    const routes = {
+      ADMIN:  '/admin-dashboard/',
+      AGENT:  '/agent-dashboard/',
+      CLIENT: '/client-dashboard/',
+    };
+    window.location.href = routes[role] || '/';
+
+  } catch (e) {
+    msg.innerHTML = '<div class="alert alert-error">Impossible de contacter le serveur.</div>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Se connecter';
+  }
+});
+
+// Entrée clavier
+document.getElementById('password').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('btn-login').click();
+});
+</script>
+{% endblock %}

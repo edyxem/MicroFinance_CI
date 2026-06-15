@@ -1,12 +1,10 @@
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
-
-    # ── Pages HTML ─────────────────────────────────────────
     path('',                include('base.urls')),
-
-    # ── API REST ───────────────────────────────────────────
     path('api/auth/',           include('accounts.urls')),
     path('api/credits/',        include('credits.urls')),
     path('api/repayments/',     include('repayments.urls')),
@@ -15,8 +13,6 @@ urlpatterns = [
     path('api/notifications/',  include('notifications.urls')),
     path('api/chat/',           include('chat.urls')),
     path('api/reports/',        include('reports.urls')),
-
-    # ── Documentation Swagger ──────────────────────────────
-    path('api/schema/',     SpectacularAPIView.as_view(),                    name='schema'),
-    path('api/docs/',       SpectacularSwaggerView.as_view(url_name='schema'),  name='swagger-ui'),
-]
+    path('api/schema/',     SpectacularAPIView.as_view(),                      name='schema'),
+    path('api/docs/',       SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

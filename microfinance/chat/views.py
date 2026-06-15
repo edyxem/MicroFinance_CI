@@ -1,3 +1,5 @@
+from django.views import View
+from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -142,3 +144,7 @@ class MessageCreateView(APIView):
                 )
             return Response(MessageSerializer(message).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ChatPageView(View):
+    def get(self, request, pk=None):
+        return render(request, 'client/chat.html', {'conversation_id': pk})
