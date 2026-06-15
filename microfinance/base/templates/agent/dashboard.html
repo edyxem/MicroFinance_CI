@@ -1,0 +1,136 @@
+{% extends "common/base.html" %}
+{% block title %}Dashboard Agent — COFINANCE CI{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <div class="card-header" style="margin-bottom:1rem;">
+    <h1 style="font-size:1.2rem;color:#1a1a2e;" id="welcome-title">Bonjour —</h1>
+    <div class="shortcut-bar">
+      <a href="/agent/credits/?status=SOUMISE" class="btn btn-primary btn-sm">Dossiers à traiter</a>
+      <a href="/agent/conversations/" class="btn btn-neutral btn-sm">💬 Support</a>
+    </div>
+  </div>
+
+  <!-- KPIs rapides -->
+  <div class="kpi-grid" id="kpi-grid">
+    <div class="kpi-card"><div class="loading">…</div></div>
+    <div class="kpi-card"><div class="loading">…</div></div>
+    <div class="kpi-card"><div class="loading">…</div></div>
+    <div class="kpi-card"><div class="loading">…</div></div>
+  </div>
+
+  <!-- Dossiers en attente -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Dossiers à traiter</h2>
+      <a href="/agent/credits/" style="font-size:.83rem;">Voir tout</a>
+    </div>
+    <div id="pending-content"><div class="loading">Chargement</div></div>
+  </div>
+
+  <!-- Conversations ouvertes -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Support en attente</h2>
+      <a href="/agent/conversations/" style="font-size:.83rem;">Voir tout</a>
+    </div>
+    <div id="conv-content"><div class="loading">Chargement</div></div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('welcome-title').textContent =
+  `Bonjour, ${getUser()?.username} 👋`;
+
+// ── KPIs ──────────────────────────────────────────────────
+async function loadKPIs() {
+  const res  = await apiFetch('/api/credits/');
+  const data = await res.json();
+
+  const counts = { SOUMISE:0, EN_ANALYSE:0, APPROUVEE:0, DECAISSEE:0 };
+  data.forEach(c => { if (counts[c.status] !== undefined) counts[c.status]++; });
+
+  document.getElementById('kpi-grid').innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-value">${counts.SOUMISE}</div>
+      <div class="kpi-label">Soumises</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value">${counts.EN_ANALYSE}</div>
+      <div class="kpi-label">En analyse</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value">${counts.APPROUVEE}</div>
+      <div class="kpi-label">Approuvées</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value">${counts.DECAISSEE}</div>
+      <div class="kpi-label">Décaissées</div>
+    </div>`;
+}
+
+// ── Dossiers en attente ───────────────────────────────────
+async function loadPending() {
+  const res  = await apiFetch('/api/credits/?status=SOUMISE');
+  const data = await res.json();
+  const el   = document.getElementById('pending-content');
+
+  const soumis = data.filter(c => ['SOUMISE','EN_ANALYSE'].includes(c.status)).slice(0,5);
+
+  if (!soumis.length) {
+    el.innerHTML = '<p style="color:#888;font-size:.88rem;">Aucun dossier en attente.</p>';
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Client</th><th>Montant</th><th>Durée</th><th>Soumis le</th><th>Statut</th><th></th></tr></thead>
+        <tbody>
+          ${soumis.map(c => `
+            <tr>
+              <td>${c.client_detail?.username || '—'}</td>
+              <td>${fmtMoney(c.montant)}</td>
+              <td>${c.duree_mois} mois</td>
+              <td>${fmtDate(c.date_soumission)}</td>
+              <td>${badge(c.status)}</td>
+              <td><a href="/agent/credits/${c.id}/" class="btn btn-sm btn-primary">Traiter</a></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+// ── Conversations ouvertes ────────────────────────────────
+async function loadConvs() {
+  const res  = await apiFetch('/api/chat/?status=OUVERTE');
+  const data = await res.json();
+  const el   = document.getElementById('conv-content');
+
+  const ouvertes = data.filter(c => c.status !== 'RESOLUE').slice(0,5);
+
+  if (!ouvertes.length) {
+    el.innerHTML = '<p style="color:#888;font-size:.88rem;">Aucune conversation en attente.</p>';
+    return;
+  }
+
+  el.innerHTML = ouvertes.map(c => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:.6rem 0;border-bottom:1px solid #f0f0f0;">
+      <div>
+        <strong>${c.client_detail?.username || '—'}</strong>
+        <span style="margin-left:.5rem;">${badge(c.status)}</span>
+        <div style="font-size:.78rem;color:#aaa;margin-top:.1rem;">${fmtDatetime(c.created_at)}</div>
+      </div>
+      <a href="/agent/conversations/${c.id}/" class="btn btn-sm btn-neutral">Ouvrir</a>
+    </div>`).join('');
+}
+
+loadKPIs();
+loadPending();
+loadConvs();
+</script>
+{% endblock %}

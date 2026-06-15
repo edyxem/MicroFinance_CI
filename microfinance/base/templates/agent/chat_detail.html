@@ -1,0 +1,162 @@
+{% extends "common/base.html" %}
+{% block title %}Conversation — COFINANCE CI{% endblock %}
+
+{% block content %}
+<div class="container-sm">
+  <div style="margin-bottom:1rem;">
+    <a href="/agent/conversations/" style="font-size:.85rem;">← Retour aux conversations</a>
+  </div>
+
+  <div class="card" style="padding-bottom:.5rem;">
+    <div class="card-header" style="margin-bottom:.5rem;">
+      <div>
+        <strong id="conv-title">Conversation #—</strong>
+        <span id="conv-status" style="margin-left:.5rem;"></span><br>
+        <small style="color:#888;" id="conv-client"></small>
+      </div>
+      <div style="display:flex;gap:.5rem;">
+        <button class="btn btn-sm btn-primary"  id="btn-assign" style="display:none;">Prendre en charge</button>
+        <button class="btn btn-sm btn-success"  id="btn-close"  style="display:none;">Résoudre</button>
+      </div>
+    </div>
+
+    <div class="typing-indicator" id="typing-indicator"></div>
+    <div class="chat-box" id="chat-box"><div class="loading">Chargement</div></div>
+
+    <div class="chat-input-row" id="chat-input-row">
+      <input type="text" id="chat-input" placeholder="Votre message…">
+      <button class="btn btn-primary" id="btn-send">Envoyer</button>
+    </div>
+
+    <div id="chat-closed-notice" class="alert alert-warn" style="display:none;margin-top:.5rem;">
+      Cette conversation est résolue.
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const user   = getUser();
+const convId = window.location.pathname.split('/').filter(Boolean).pop();
+let ws       = null;
+let conv     = null;
+
+// ── Chargement ────────────────────────────────────────────
+async function init() {
+  const res = await apiFetch(`/api/chat/${convId}/`);
+  conv      = await res.json();
+
+  document.getElementById('conv-title').textContent  = `Conversation #${conv.id}`;
+  document.getElementById('conv-status').innerHTML   = badge(conv.status);
+  document.getElementById('conv-client').textContent = `Client : ${conv.client_detail?.username || '—'}`;
+
+  // Afficher les boutons d'action
+  if (conv.status === 'OUVERTE') {
+    document.getElementById('btn-assign').style.display = '';
+  }
+  if (conv.status !== 'RESOLUE') {
+    document.getElementById('btn-close').style.display = '';
+  }
+  if (conv.status === 'RESOLUE') {
+    document.getElementById('chat-input-row').style.display = 'none';
+    document.getElementById('chat-closed-notice').style.display = '';
+  }
+
+  await loadMessages();
+  connectWS();
+}
+
+async function loadMessages() {
+  const res  = await apiFetch(`/api/chat/${convId}/messages/`);
+  const msgs = await res.json();
+  const box  = document.getElementById('chat-box');
+  box.innerHTML = '';
+  msgs.forEach(appendMsg);
+  box.scrollTop = box.scrollHeight;
+}
+
+function appendMsg(m) {
+  const box  = document.getElementById('chat-box');
+  const isMe = m.expediteur === user.id || m.expediteur_id === user.id;
+  const cls  = m.is_auto ? 'auto' : (isMe ? 'me' : 'them');
+  const name = m.expediteur_username || m.expediteur_detail?.username || '';
+  const div  = document.createElement('div');
+  div.className = `msg ${cls}`;
+  div.innerHTML = `
+    <div class="meta">${isMe ? 'Vous' : name} · ${fmtDatetime(m.created_at)}</div>
+    <div class="bubble">${escHtml(m.contenu)}</div>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── WebSocket ─────────────────────────────────────────────
+function connectWS() {
+  const token = localStorage.getItem('access');
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}/ws/chat/${convId}/?token=${token}`);
+
+  ws.onmessage = ({ data }) => {
+    const msg = JSON.parse(data);
+    if (msg.type === 'chat_message') appendMsg(msg);
+    else if (msg.type === 'typing') {
+      document.getElementById('typing-indicator').textContent =
+        msg.is_typing ? `${msg.username} est en train d'écrire…` : '';
+    }
+  };
+
+  ws.onclose = () => { setTimeout(() => { if (convId) connectWS(); }, 3000); };
+}
+
+// ── Envoi ─────────────────────────────────────────────────
+let typingTimer = null;
+
+document.getElementById('chat-input').addEventListener('input', () => {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  ws.send(JSON.stringify({ type: 'typing', is_typing: true }));
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(() => ws.send(JSON.stringify({ type: 'typing', is_typing: false })), 1500);
+});
+
+document.getElementById('btn-send').addEventListener('click', sendMsg);
+document.getElementById('chat-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+});
+
+function sendMsg() {
+  const input   = document.getElementById('chat-input');
+  const contenu = input.value.trim();
+  if (!contenu || !ws || ws.readyState !== WebSocket.OPEN) return;
+  ws.send(JSON.stringify({ type: 'chat_message', contenu }));
+  input.value = '';
+}
+
+// ── Actions ───────────────────────────────────────────────
+document.getElementById('btn-assign').addEventListener('click', async () => {
+  const res = await apiFetch(`/api/chat/${convId}/assign/`, { method: 'POST' });
+  if (res.ok) {
+    flash('Conversation prise en charge.', 'success');
+    document.getElementById('btn-assign').style.display = 'none';
+    document.getElementById('conv-status').innerHTML = badge('EN_COURS');
+  }
+});
+
+document.getElementById('btn-close').addEventListener('click', async () => {
+  if (!confirm('Marquer cette conversation comme résolue ?')) return;
+  const res = await apiFetch(`/api/chat/${convId}/close/`, { method: 'POST' });
+  if (res.ok) {
+    flash('Conversation résolue.', 'success');
+    document.getElementById('btn-close').style.display = 'none';
+    document.getElementById('chat-input-row').style.display = 'none';
+    document.getElementById('chat-closed-notice').style.display = '';
+    document.getElementById('conv-status').innerHTML = badge('RESOLUE');
+  }
+});
+
+init();
+</script>
+{% endblock %}

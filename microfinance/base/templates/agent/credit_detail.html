@@ -1,0 +1,210 @@
+{% extends "common/base.html" %}
+{% block title %}Dossier crédit — COFINANCE CI{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div style="margin-bottom:1rem;">
+    <a href="/agent/credits/" style="font-size:.85rem;">← Retour aux dossiers</a>
+  </div>
+  <div id="content"><div class="loading">Chargement</div></div>
+</div>
+
+<!-- Modal changement de statut -->
+<div id="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:10px;padding:1.5rem;width:100%;max-width:440px;margin:1rem;">
+    <h3 id="modal-title" style="font-size:1rem;margin-bottom:1rem;color:#1a1a2e;"></h3>
+    <div id="modal-body"></div>
+    <div style="display:flex;gap:.75rem;margin-top:1rem;">
+      <button class="btn btn-primary" id="modal-confirm">Confirmer</button>
+      <button class="btn btn-neutral" onclick="closeModal()">Annuler</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const creditId = window.location.pathname.split('/').filter(Boolean).pop();
+let credit     = null;
+
+// ── Chargement ────────────────────────────────────────────
+async function load() {
+  const res = await apiFetch(`/api/credits/${creditId}/`);
+  if (!res || !res.ok) {
+    document.getElementById('content').innerHTML = '<div class="alert alert-error">Dossier introuvable.</div>';
+    return;
+  }
+  credit = await res.json();
+  render();
+}
+
+function render() {
+  const c  = credit;
+  const el = document.getElementById('content');
+
+  // Boutons d'action selon le statut actuel
+  const actions = getActions(c.status);
+
+  const infoRows = [
+    ['Client',          c.client_detail?.username],
+    ['Montant',         fmtMoney(c.montant)],
+    ['Durée',           `${c.duree_mois} mois`],
+    ['Taux',            `${c.taux_interet}%`],
+    ['Statut',          badge(c.status)],
+    ['Score',           c.score ? `<strong>${c.score}/100</strong>` : '—'],
+    ['Méthode décaissement', c.methode_decaissement],
+    ['N° Mobile Money', c.numero_decaissement || '—'],
+    ['Soumis le',       fmtDatetime(c.date_soumission)],
+    ['Décaissé le',     c.date_decaissement ? fmtDate(c.date_decaissement) : '—'],
+    ['Agent assigné',   c.agent_detail?.username || '—'],
+  ].map(([k,v]) => `<tr><td style="color:#666;width:180px;font-size:.85rem;">${k}</td><td>${v}</td></tr>`).join('');
+
+  let motifHtml = '';
+  if (c.status === 'REFUSEE' && c.motif_refus) {
+    motifHtml = `<div class="alert alert-error"><strong>Motif de refus :</strong> ${c.motif_refus}</div>`;
+  }
+
+  let echeancierHtml = '';
+  if (c.installments?.length) {
+    const rows = c.installments.map(e => `
+      <tr>
+        <td>${e.numero}</td>
+        <td>${fmtDate(e.date_prevue)}</td>
+        <td>${fmtMoney(e.montant_du)}</td>
+        <td>${e.penalite > 0 ? fmtMoney(e.penalite) : '—'}</td>
+        <td>${fmtMoney(e.montant_paye)}</td>
+        <td>${fmtMoney(e.reste_a_payer)}</td>
+        <td>${badge(e.status)}</td>
+        ${c.status === 'DECAISSEE'
+          ? `<td><button class="btn btn-sm btn-success" onclick="openPayment(${e.id}, ${e.numero}, ${e.reste_a_payer})">Encaisser</button></td>`
+          : '<td></td>'}
+      </tr>`).join('');
+
+    echeancierHtml = `
+      <div class="card">
+        <h2>Échéancier</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Date</th><th>Dû</th><th>Pénalité</th><th>Payé</th><th>Reste</th><th>Statut</th><th></th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+  el.innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <h2>Dossier #${c.id}</h2>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;">${actions}</div>
+      </div>
+      <table style="width:100%;">${infoRows}</table>
+      ${motifHtml}
+    </div>
+    ${echeancierHtml}`;
+}
+
+// ── Transitions autorisées ────────────────────────────────
+function getActions(status) {
+  const map = {
+    SOUMISE:    [['EN_ANALYSE','btn-primary','Prendre en charge']],
+    EN_ANALYSE: [['APPROUVEE','btn-success','Approuver'], ['REFUSEE','btn-danger','Refuser']],
+    APPROUVEE:  [['DECAISSEE','btn-success','Confirmer le décaissement']],
+    DECAISSEE:  [],
+    REFUSEE:    [],
+    SOLDEE:     [],
+  };
+  return (map[status] || []).map(([s, cls, label]) =>
+    `<button class="btn btn-sm ${cls}" onclick="openStatusModal('${s}')">${label}</button>`
+  ).join('');
+}
+
+// ── Modal changement de statut ────────────────────────────
+let pendingStatus = '';
+
+function openStatusModal(newStatus) {
+  pendingStatus = newStatus;
+  const overlay = document.getElementById('modal-overlay');
+  overlay.style.display = 'flex';
+  document.getElementById('modal-title').textContent = `Passer le dossier en : ${newStatus}`;
+
+  let body = '';
+  if (newStatus === 'REFUSEE') {
+    body = `<div class="form-group">
+      <label>Motif de refus *</label>
+      <textarea id="motif_refus" rows="3" style="width:100%;padding:.5rem;border:1px solid #ccc;border-radius:6px;font-size:.88rem;" placeholder="Expliquez le motif de refus…"></textarea>
+    </div>`;
+  } else if (newStatus === 'DECAISSEE') {
+    body = `
+      <div class="form-group">
+        <label>Méthode de décaissement</label>
+        <select id="methode_decaissement">
+          <option value="CASH">Espèces</option>
+          <option value="ORANGE_MONEY">Orange Money</option>
+          <option value="WAVE">Wave</option>
+          <option value="MTN_MOMO">MTN Mobile Money</option>
+          <option value="MOOV_MONEY">Moov Money</option>
+        </select>
+      </div>
+      <div class="form-group" id="grp-numero-modal" style="display:none;">
+        <label>Numéro Mobile Money</label>
+        <input type="text" id="numero_decaissement" placeholder="+225 07 00 00 00 00">
+      </div>`;
+    setTimeout(() => {
+      document.getElementById('methode_decaissement')?.addEventListener('change', function() {
+        document.getElementById('grp-numero-modal').style.display = this.value === 'CASH' ? 'none' : '';
+      });
+    }, 50);
+  } else {
+    body = `<p style="color:#555;font-size:.88rem;">Confirmer le passage du dossier en <strong>${newStatus}</strong> ?</p>`;
+  }
+
+  document.getElementById('modal-body').innerHTML = body;
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').style.display = 'none';
+  pendingStatus = '';
+}
+
+document.getElementById('modal-confirm').addEventListener('click', async () => {
+  const payload = { status: pendingStatus };
+
+  if (pendingStatus === 'REFUSEE') {
+    const motif = document.getElementById('motif_refus')?.value.trim();
+    if (!motif) { flash('Le motif de refus est obligatoire.', 'error'); return; }
+    payload.motif_refus = motif;
+  }
+  if (pendingStatus === 'DECAISSEE') {
+    payload.methode_decaissement = document.getElementById('methode_decaissement')?.value || 'CASH';
+    const num = document.getElementById('numero_decaissement')?.value.trim();
+    if (num) payload.numero_decaissement = num;
+  }
+
+  const btn = document.getElementById('modal-confirm');
+  btn.disabled = true;
+
+  const res  = await apiFetch(`/api/credits/${creditId}/status/`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload)
+  });
+
+  if (res.ok) {
+    flash('Statut mis à jour !', 'success');
+    closeModal();
+    load(); // Recharger
+  } else {
+    const err = await res.json();
+    flash(Object.values(err).flat().join(' '), 'error');
+    btn.disabled = false;
+  }
+});
+
+// ── Paiement rapide depuis l'échéancier ──────────────────
+function openPayment(installmentId, numero, resteAPayer) {
+  window.location.href = `/agent/payments/?installment=${installmentId}&credit=${creditId}&numero=${numero}&reste=${resteAPayer}`;
+}
+
+load();
+</script>
+{% endblock %}

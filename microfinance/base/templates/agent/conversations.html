@@ -1,0 +1,70 @@
+{% extends "common/base.html" %}
+{% block title %}Conversations support — COFINANCE CI{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h1 style="font-size:1.2rem;color:#1a1a2e;margin-bottom:1rem;">Conversations support</h1>
+
+  <!-- Filtres -->
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+    <button class="btn btn-sm btn-primary"  data-f=""        onclick="filter(this,'')">Toutes</button>
+    <button class="btn btn-sm btn-neutral"  data-f="OUVERTE"  onclick="filter(this,'OUVERTE')">Ouvertes</button>
+    <button class="btn btn-sm btn-neutral"  data-f="EN_COURS" onclick="filter(this,'EN_COURS')">En cours</button>
+    <button class="btn btn-sm btn-neutral"  data-f="RESOLUE"  onclick="filter(this,'RESOLUE')">Résolues</button>
+  </div>
+
+  <div class="card">
+    <div id="content"><div class="loading">Chargement</div></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let all = [];
+
+async function load() {
+  const res = await apiFetch('/api/chat/');
+  all = await res.json();
+  render(all);
+}
+
+function render(data) {
+  const el = document.getElementById('content');
+  if (!data.length) {
+    el.innerHTML = '<p style="color:#888;">Aucune conversation.</p>';
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Client</th><th>Agent assigné</th><th>Statut</th><th>Créée le</th><th></th></tr>
+        </thead>
+        <tbody>
+          ${data.map(c => `
+            <tr>
+              <td>#${c.id}</td>
+              <td><strong>${c.client_detail?.username || '—'}</strong></td>
+              <td>${c.agent_detail?.username || '<span style="color:#aaa;">Non assigné</span>'}</td>
+              <td>${badge(c.status)}</td>
+              <td>${fmtDatetime(c.created_at)}</td>
+              <td>
+                <a href="/agent/conversations/${c.id}/" class="btn btn-sm btn-primary">Ouvrir</a>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function filter(btn, status) {
+  document.querySelectorAll('[data-f]').forEach(b => b.className = 'btn btn-sm btn-neutral');
+  btn.className = 'btn btn-sm btn-primary';
+  render(status ? all.filter(c => c.status === status) : all);
+}
+
+load();
+</script>
+{% endblock %}

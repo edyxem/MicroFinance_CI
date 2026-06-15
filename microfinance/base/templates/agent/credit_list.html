@@ -1,0 +1,80 @@
+{% extends "common/base.html" %}
+{% block title %}Dossiers crédit — COFINANCE CI{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h1 style="font-size:1.2rem;color:#1a1a2e;margin-bottom:1rem;">Dossiers de crédit</h1>
+
+  <!-- Filtres statut -->
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+    <button class="btn btn-sm btn-primary"  data-s=""            onclick="filter(this,'')">Tous</button>
+    <button class="btn btn-sm btn-neutral"  data-s="SOUMISE"     onclick="filter(this,'SOUMISE')">Soumises</button>
+    <button class="btn btn-sm btn-neutral"  data-s="EN_ANALYSE"  onclick="filter(this,'EN_ANALYSE')">En analyse</button>
+    <button class="btn btn-sm btn-neutral"  data-s="APPROUVEE"   onclick="filter(this,'APPROUVEE')">Approuvées</button>
+    <button class="btn btn-sm btn-neutral"  data-s="DECAISSEE"   onclick="filter(this,'DECAISSEE')">Décaissées</button>
+    <button class="btn btn-sm btn-neutral"  data-s="REFUSEE"     onclick="filter(this,'REFUSEE')">Refusées</button>
+    <button class="btn btn-sm btn-neutral"  data-s="SOLDEE"      onclick="filter(this,'SOLDEE')">Soldées</button>
+  </div>
+
+  <div class="card">
+    <div id="content"><div class="loading">Chargement</div></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let all = [];
+
+async function load() {
+  const res = await apiFetch('/api/credits/');
+  all = await res.json();
+  render(all);
+}
+
+function render(data) {
+  const el = document.getElementById('content');
+  if (!data.length) {
+    el.innerHTML = '<p style="color:#888;">Aucun dossier.</p>';
+    return;
+  }
+  el.innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Client</th><th>Montant</th><th>Durée</th><th>Score</th><th>Soumis le</th><th>Statut</th><th></th></tr>
+        </thead>
+        <tbody>
+          ${data.map(c => `
+            <tr>
+              <td>#${c.id}</td>
+              <td>${c.client_detail?.username || '—'}</td>
+              <td>${fmtMoney(c.montant)}</td>
+              <td>${c.duree_mois} mois</td>
+              <td>${c.score ?? '—'}</td>
+              <td>${fmtDate(c.date_soumission)}</td>
+              <td>${badge(c.status)}</td>
+              <td><a href="/agent/credits/${c.id}/" class="btn btn-sm btn-primary">Voir</a></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function filter(btn, status) {
+  document.querySelectorAll('[data-s]').forEach(b => b.className = 'btn btn-sm btn-neutral');
+  btn.className = 'btn btn-sm btn-primary';
+  render(status ? all.filter(c => c.status === status) : all);
+}
+
+// Pré-filtrer si ?status=X dans l'URL
+const params = new URLSearchParams(window.location.search);
+const preStatus = params.get('status');
+if (preStatus) {
+  const btn = document.querySelector(`[data-s="${preStatus}"]`);
+  if (btn) setTimeout(() => filter(btn, preStatus), 300);
+}
+
+load();
+</script>
+{% endblock %}

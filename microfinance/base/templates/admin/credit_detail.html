@@ -1,0 +1,200 @@
+{% extends "common/base.html" %}
+{% block title %}Dossier crédit — Admin COFINANCE CI{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div style="margin-bottom:1rem;">
+    <a href="/admin/credits/" style="font-size:.85rem;">← Retour aux crédits</a>
+  </div>
+  <div id="content"><div class="loading">Chargement</div></div>
+</div>
+
+<!-- Modal statut -->
+<div id="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:10px;padding:1.5rem;width:100%;max-width:440px;margin:1rem;">
+    <h3 id="modal-title" style="font-size:1rem;margin-bottom:1rem;color:#1a1a2e;"></h3>
+    <div id="modal-body"></div>
+    <div style="display:flex;gap:.75rem;margin-top:1rem;">
+      <button class="btn btn-primary" id="modal-confirm">Confirmer</button>
+      <button class="btn btn-neutral" onclick="closeModal()">Annuler</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const creditId = window.location.pathname.split('/').filter(Boolean).pop();
+let credit     = null;
+
+async function load() {
+  const res = await apiFetch(`/api/credits/${creditId}/`);
+  if (!res?.ok) {
+    document.getElementById('content').innerHTML = '<div class="alert alert-error">Dossier introuvable.</div>';
+    return;
+  }
+  credit = await res.json();
+  render();
+}
+
+function render() {
+  const c  = credit;
+  const el = document.getElementById('content');
+  const actions = getActions(c.status);
+
+  const rows = [
+    ['Client',              `${c.client_detail?.username} (${c.client_detail?.email || '—'})`],
+    ['Région',              c.client_detail?.region || '—'],
+    ['Montant',             fmtMoney(c.montant)],
+    ['Durée',               `${c.duree_mois} mois`],
+    ['Taux d\'intérêt',     `${c.taux_interet}%`],
+    ['Score d\'éligibilité',c.score ? `<strong>${c.score}/100</strong>` : '—'],
+    ['Statut',              badge(c.status)],
+    ['Méthode décaissement',c.methode_decaissement],
+    ['N° Mobile Money',     c.numero_decaissement || '—'],
+    ['Soumis le',           fmtDatetime(c.date_soumission)],
+    ['Décaissé le',         c.date_decaissement ? fmtDate(c.date_decaissement) : '—'],
+    ['Dernière MàJ',        fmtDatetime(c.updated_at)],
+    ['Agent assigné',       c.agent_detail?.username || '—'],
+  ].map(([k,v]) => `<tr><td style="color:#666;width:200px;font-size:.85rem;">${k}</td><td>${v}</td></tr>`).join('');
+
+  let motifHtml = '';
+  if (c.status === 'REFUSEE' && c.motif_refus) {
+    motifHtml = `<div class="alert alert-error" style="margin-top:.75rem;"><strong>Motif :</strong> ${c.motif_refus}</div>`;
+  }
+
+  let echeancierHtml = '';
+  if (c.installments?.length) {
+    const totalDu    = c.installments.reduce((a,e) => a + parseFloat(e.montant_du), 0);
+    const totalPaye  = c.installments.reduce((a,e) => a + parseFloat(e.montant_paye), 0);
+    const totalReste = c.installments.reduce((a,e) => a + parseFloat(e.reste_a_payer), 0);
+
+    const rows2 = c.installments.map(e => `
+      <tr>
+        <td>${e.numero}</td>
+        <td>${fmtDate(e.date_prevue)}</td>
+        <td>${fmtMoney(e.montant_du)}</td>
+        <td>${e.penalite > 0 ? `<span style="color:#c62828;">${fmtMoney(e.penalite)}</span>` : '—'}</td>
+        <td>${fmtMoney(e.montant_paye)}</td>
+        <td><strong>${fmtMoney(e.reste_a_payer)}</strong></td>
+        <td>${badge(e.status)}</td>
+      </tr>`).join('');
+
+    echeancierHtml = `
+      <div class="card">
+        <div class="card-header">
+          <h2>Échéancier de remboursement</h2>
+          <div style="font-size:.82rem;color:#666;">
+            Total dû : <strong>${fmtMoney(totalDu)}</strong> ·
+            Payé : <strong style="color:#2e7d32;">${fmtMoney(totalPaye)}</strong> ·
+            Reste : <strong style="color:#c62828;">${fmtMoney(totalReste)}</strong>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Date</th><th>Dû</th><th>Pénalité</th><th>Payé</th><th>Reste</th><th>Statut</th></tr></thead>
+            <tbody>${rows2}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+  el.innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <h2>Dossier #${c.id}</h2>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;">${actions}</div>
+      </div>
+      <table style="width:100%;">${rows}</table>
+      ${motifHtml}
+    </div>
+    ${echeancierHtml}`;
+}
+
+function getActions(status) {
+  const map = {
+    SOUMISE:    [['EN_ANALYSE','btn-primary','Prendre en charge']],
+    EN_ANALYSE: [['APPROUVEE','btn-success','Approuver'], ['REFUSEE','btn-danger','Refuser']],
+    APPROUVEE:  [['DECAISSEE','btn-success','Confirmer décaissement']],
+    DECAISSEE:  [],
+    REFUSEE:    [],
+    SOLDEE:     [],
+  };
+  return (map[status] || []).map(([s, cls, label]) =>
+    `<button class="btn btn-sm ${cls}" onclick="openModal('${s}')">${label}</button>`
+  ).join('');
+}
+
+let pendingStatus = '';
+
+function openModal(newStatus) {
+  pendingStatus = newStatus;
+  document.getElementById('modal-overlay').style.display = 'flex';
+  document.getElementById('modal-title').textContent = `Passer le dossier → ${newStatus}`;
+
+  let body = '';
+  if (newStatus === 'REFUSEE') {
+    body = `<div class="form-group">
+      <label>Motif de refus *</label>
+      <textarea id="motif_refus" rows="3" style="width:100%;padding:.5rem;border:1px solid #ccc;border-radius:6px;font-size:.88rem;" placeholder="Motif obligatoire…"></textarea>
+    </div>`;
+  } else if (newStatus === 'DECAISSEE') {
+    body = `
+      <div class="form-group">
+        <label>Méthode de décaissement</label>
+        <select id="methode_decaissement">
+          <option value="CASH">Espèces</option>
+          <option value="ORANGE_MONEY">Orange Money</option>
+          <option value="WAVE">Wave</option>
+          <option value="MTN_MOMO">MTN Mobile Money</option>
+          <option value="MOOV_MONEY">Moov Money</option>
+        </select>
+      </div>
+      <div class="form-group" id="grp-num" style="display:none;">
+        <label>Numéro Mobile Money</label>
+        <input type="text" id="numero_decaissement" placeholder="+225 07 00 00 00 00">
+      </div>`;
+    setTimeout(() => {
+      document.getElementById('methode_decaissement')?.addEventListener('change', function() {
+        document.getElementById('grp-num').style.display = this.value === 'CASH' ? 'none' : '';
+      });
+    }, 50);
+  } else {
+    body = `<p style="color:#555;font-size:.88rem;">Confirmer le passage en <strong>${newStatus}</strong> ?</p>`;
+  }
+  document.getElementById('modal-body').innerHTML = body;
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').style.display = 'none';
+  pendingStatus = '';
+}
+
+document.getElementById('modal-confirm').addEventListener('click', async () => {
+  const payload = { status: pendingStatus };
+
+  if (pendingStatus === 'REFUSEE') {
+    const motif = document.getElementById('motif_refus')?.value.trim();
+    if (!motif) { flash('Motif obligatoire.', 'error'); return; }
+    payload.motif_refus = motif;
+  }
+  if (pendingStatus === 'DECAISSEE') {
+    payload.methode_decaissement = document.getElementById('methode_decaissement')?.value || 'CASH';
+    const num = document.getElementById('numero_decaissement')?.value.trim();
+    if (num) payload.numero_decaissement = num;
+  }
+
+  const btn = document.getElementById('modal-confirm');
+  btn.disabled = true;
+
+  const res = await apiFetch(`/api/credits/${creditId}/status/`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload)
+  });
+
+  if (res.ok) {
+    flash('Statut mis à jour !', 'success');
+    closeModal();
+    load();
+  } else {
+    const err =

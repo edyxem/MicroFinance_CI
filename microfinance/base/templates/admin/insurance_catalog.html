@@ -1,0 +1,208 @@
+{% extends "common/base.html" %}
+{% block title %}Assurance — Admin COFINANCE CI{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <h1 style="font-size:1.2rem;color:#1a1a2e;margin-bottom:1rem;">Catalogue & Polices d'assurance</h1>
+
+  <!-- Produits -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Produits</h2>
+      <button class="btn btn-primary btn-sm" onclick="openProductForm()">+ Nouveau produit</button>
+    </div>
+    <div id="msg-product"></div>
+
+    <!-- Formulaire inline (masqué par défaut) -->
+    <div id="product-form" style="display:none;border:1px solid #e0e0e0;border-radius:8px;padding:1rem;margin-bottom:1rem;">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nom *</label>
+          <input type="text" id="pf-nom" placeholder="ex : Assurance Décès">
+        </div>
+        <div class="form-group">
+          <label>Type *</label>
+          <select id="pf-type">
+            <option value="VIE">Vie</option>
+            <option value="SANTE">Santé</option>
+            <option value="CREDIT">Crédit</option>
+            <option value="AUTRE">Autre</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Prix mensuel (FCFA) *</label>
+          <input type="number" id="pf-prix" placeholder="ex : 5000" min="0">
+        </div>
+        <div class="form-group">
+          <label>Durée (mois) *</label>
+          <input type="number" id="pf-duree" placeholder="ex : 12" min="1">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="pf-desc" rows="2" style="width:100%;padding:.5rem;border:1px solid #ccc;border-radius:6px;font-size:.88rem;"></textarea>
+      </div>
+      <div style="display:flex;gap:.75rem;">
+        <button class="btn btn-success btn-sm" id="pf-submit" onclick="submitProduct()">Enregistrer</button>
+        <button class="btn btn-neutral btn-sm" onclick="closeProductForm()">Annuler</button>
+      </div>
+    </div>
+
+    <div id="products-content"><div class="loading">Chargement</div></div>
+  </div>
+
+  <!-- Polices souscrites -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Polices souscrites</h2>
+      <div style="display:flex;gap:.5rem;">
+        <button class="btn btn-sm btn-neutral" data-ps=""       onclick="filterPol(this,'')">Toutes</button>
+        <button class="btn btn-sm btn-neutral" data-ps="ACTIVE" onclick="filterPol(this,'ACTIVE')">Actives</button>
+        <button class="btn btn-sm btn-neutral" data-ps="EXPIREE" onclick="filterPol(this,'EXPIREE')">Expirées</button>
+      </div>
+    </div>
+    <div id="policies-content"><div class="loading">Chargement</div></div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let allPolicies = [];
+
+// ── Produits ──────────────────────────────────────────────
+async function loadProducts() {
+  const res  = await apiFetch('/api/insurance/products/');
+  const data = await res.json();
+  const el   = document.getElementById('products-content');
+
+  if (!data.length) {
+    el.innerHTML = '<p style="color:#888;">Aucun produit.</p>';
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Nom</th><th>Type</th><th>Prix/mois</th><th>Durée</th><th>Actif</th><th></th></tr>
+        </thead>
+        <tbody>
+          ${data.map(p => `
+            <tr>
+              <td><strong>${p.nom}</strong><br><small style="color:#888;">${p.description}</small></td>
+              <td>${p.type_assurance}</td>
+              <td>${fmtMoney(p.prix_mensuel)}</td>
+              <td>${p.duree_mois} mois</td>
+              <td>${p.is_active
+                ? '<span class="badge status-ACTIVE">Oui</span>'
+                : '<span class="badge status-REFUSEE">Non</span>'}</td>
+              <td>
+                ${p.is_active
+                  ? `<button class="btn btn-sm btn-danger" onclick="toggleProduct(${p.id})">Désactiver</button>`
+                  : ''}
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function openProductForm() {
+  document.getElementById('product-form').style.display = '';
+}
+
+function closeProductForm() {
+  document.getElementById('product-form').style.display = 'none';
+  ['pf-nom','pf-prix','pf-duree','pf-desc'].forEach(id => document.getElementById(id).value = '');
+}
+
+async function submitProduct() {
+  const nom         = document.getElementById('pf-nom').value.trim();
+  const type_assurance = document.getElementById('pf-type').value;
+  const prix_mensuel   = document.getElementById('pf-prix').value;
+  const duree_mois     = document.getElementById('pf-duree').value;
+  const description    = document.getElementById('pf-desc').value.trim();
+  const msgEl          = document.getElementById('msg-product');
+
+  if (!nom || !prix_mensuel || !duree_mois) {
+    msgEl.innerHTML = '<div class="alert alert-error">Nom, prix et durée sont obligatoires.</div>';
+    return;
+  }
+
+  const btn = document.getElementById('pf-submit');
+  btn.disabled = true;
+
+  const res  = await apiFetch('/api/insurance/products/', {
+    method: 'POST',
+    body: JSON.stringify({ nom, type_assurance, prix_mensuel, duree_mois, description })
+  });
+  const data = await res.json();
+
+  if (!res.ok) {
+    msgEl.innerHTML = `<div class="alert alert-error">${Object.values(data).flat().join(' ')}</div>`;
+    btn.disabled = false;
+    return;
+  }
+
+  flash('Produit créé avec succès !', 'success');
+  msgEl.innerHTML = '';
+  closeProductForm();
+  loadProducts();
+  btn.disabled = false;
+}
+
+async function toggleProduct(id) {
+  if (!confirm('Désactiver ce produit ?')) return;
+  const res = await apiFetch(`/api/insurance/products/${id}/`, { method: 'DELETE' });
+  if (res.ok) { flash('Produit désactivé.', 'success'); loadProducts(); }
+}
+
+// ── Polices ───────────────────────────────────────────────
+async function loadPolicies() {
+  const res   = await apiFetch('/api/insurance/policies/');
+  allPolicies = await res.json();
+  renderPolicies(allPolicies);
+}
+
+function renderPolicies(data) {
+  const el = document.getElementById('policies-content');
+  if (!data.length) {
+    el.innerHTML = '<p style="color:#888;">Aucune police souscrite.</p>';
+    return;
+  }
+  el.innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Client</th><th>Produit</th><th>Bénéficiaire</th><th>Début</th><th>Fin</th><th>Statut</th></tr>
+        </thead>
+        <tbody>
+          ${data.map(p => `
+            <tr>
+              <td><strong>${p.client_detail?.username || '—'}</strong></td>
+              <td>${p.produit_detail?.nom || '—'}</td>
+              <td>${p.beneficiaire_nom}<br><small style="color:#888;">${p.beneficiaire_contact}</small></td>
+              <td>${fmtDate(p.date_debut)}</td>
+              <td>${fmtDate(p.date_fin)}</td>
+              <td>${badge(p.status)}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function filterPol(btn, status) {
+  document.querySelectorAll('[data-ps]').forEach(b => b.className = 'btn btn-sm btn-neutral');
+  btn.className = 'btn btn-sm btn-primary';
+  renderPolicies(status ? allPolicies.filter(p => p.status === status) : allPolicies);
+}
+
+loadProducts();
+loadPolicies();
+</script>
+{% endblock %}

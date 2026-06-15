@@ -1,0 +1,134 @@
+{% extends "common/base.html" %}
+{% block title %}Rapports — Admin COFINANCE CI{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h1 style="font-size:1.2rem;color:#1a1a2e;margin-bottom:1rem;">Rapports & Exports</h1>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+
+    <!-- Export CSV crédits -->
+    <div class="card">
+      <h2>Export CSV — Crédits</h2>
+      <p style="font-size:.85rem;color:#666;margin-bottom:1rem;">
+        Exporte la liste complète des dossiers de crédit avec client, montant, statut et région.
+      </p>
+      <div class="form-group">
+        <label>Filtrer par statut (optionnel)</label>
+        <select id="csv-status">
+          <option value="">Tous les statuts</option>
+          <option value="SOUMISE">Soumises</option>
+          <option value="EN_ANALYSE">En analyse</option>
+          <option value="APPROUVEE">Approuvées</option>
+          <option value="DECAISSEE">Décaissées</option>
+          <option value="REFUSEE">Refusées</option>
+          <option value="SOLDEE">Soldées</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="exportCSV()">📥 Télécharger CSV</button>
+    </div>
+
+    <!-- Export PDF rapport mensuel -->
+    <div class="card">
+      <h2>Rapport mensuel PDF</h2>
+      <p style="font-size:.85rem;color:#666;margin-bottom:1rem;">
+        Génère un rapport PDF consolidé : crédits, taux de recouvrement, assurance et support.
+      </p>
+      <button class="btn btn-primary" onclick="exportPDF()">📄 Télécharger PDF</button>
+    </div>
+
+  </div>
+
+  <!-- Récapitulatif rapide -->
+  <div class="card" style="margin-top:1rem;">
+    <h2>Récapitulatif</h2>
+    <div id="recap-content"><div class="loading">Chargement</div></div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Exports ───────────────────────────────────────────────
+function exportCSV() {
+  const status  = document.getElementById('csv-status').value;
+  const url     = `/api/reports/credits/csv/${status ? `?status=${status}` : ''}`;
+  // Téléchargement direct (endpoint renvoie une réponse Django avec Content-Disposition)
+  const a       = document.createElement('a');
+  a.href        = url;
+  a.click();
+}
+
+function exportPDF() {
+  const a  = document.createElement('a');
+  a.href   = '/api/reports/rapport/pdf/';
+  a.click();
+}
+
+// ── Récapitulatif ──────────────────────────────────────────
+async function loadRecap() {
+  const el = document.getElementById('recap-content');
+
+  const [resKPI, resCredits, resUsers] = await Promise.all([
+    apiFetch('/api/dashboard/'),
+    apiFetch('/api/credits/'),
+    apiFetch('/api/auth/users/'),
+  ]);
+
+  const kpi     = await resKPI.json();
+  const credits = await resCredits.json();
+  const users   = await resUsers.json();
+
+  const parStatut = {};
+  kpi.credits.par_statut.forEach(s => parStatut[s.status] = s.total);
+
+  const totalClients = users.filter(u => u.role === 'CLIENT').length;
+  const totalAgents  = users.filter(u => u.role === 'AGENT').length;
+  const totalAdmin   = users.filter(u => u.role === 'ADMIN').length;
+
+  const montantTotal = credits
+    .filter(c => c.status === 'DECAISSEE')
+    .reduce((a, c) => a + parseFloat(c.montant), 0);
+
+  el.innerHTML = `
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-value">${credits.length}</div>
+        <div class="kpi-label">Total dossiers</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">${fmtMoney(montantTotal)}</div>
+        <div class="kpi-label">Montant décaissé</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">${kpi.credits.taux_recouvrement}%</div>
+        <div class="kpi-label">Recouvrement</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">${kpi.assurance.polices_actives}</div>
+        <div class="kpi-label">Polices actives</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">${totalClients}</div>
+        <div class="kpi-label">Clients</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">${totalAgents}</div>
+        <div class="kpi-label">Agents</div>
+      </div>
+    </div>
+
+    <div style="margin-top:1rem;">
+      <strong style="font-size:.85rem;">Répartition des crédits par statut :</strong>
+      <div style="margin-top:.5rem;display:flex;flex-wrap:wrap;gap:.4rem;">
+        ${Object.entries(parStatut).map(([s,n]) =>
+          `<span>${badge(s)} <strong>${n}</strong></span>`
+        ).join('')}
+      </div>
+    </div>`;
+}
+
+loadRecap();
+</script>
+{% endblock %}

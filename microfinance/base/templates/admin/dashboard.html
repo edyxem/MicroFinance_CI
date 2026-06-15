@@ -1,0 +1,185 @@
+{% extends "common/base.html" %}
+{% block title %}Dashboard Admin — COFINANCE CI{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <div class="card-header" style="margin-bottom:1rem;">
+    <h1 style="font-size:1.2rem;color:#1a1a2e;" id="welcome-title">Tableau de bord</h1>
+    <div class="shortcut-bar">
+      <a href="/admin/reports/" class="btn btn-neutral btn-sm">📊 Rapports</a>
+      <a href="/admin/users/" class="btn btn-neutral btn-sm">👤 Utilisateurs</a>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid" id="kpi-grid">
+    <div class="kpi-card"><div class="loading">…</div></div>
+    <div class="kpi-card"><div class="loading">…</div></div>
+    <div class="kpi-card"><div class="loading">…</div></div>
+    <div class="kpi-card"><div class="loading">…</div></div>
+    <div class="kpi-card"><div class="loading">…</div></div>
+    <div class="kpi-card"><div class="loading">…</div></div>
+  </div>
+
+  <!-- Graphiques -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+    <div class="card">
+      <h2>Crédits par statut</h2>
+      <div id="chart-statuts" style="height:160px;"></div>
+    </div>
+    <div class="card">
+      <h2>Crédits soumis (8 dernières semaines)</h2>
+      <div id="chart-credits" style="height:160px;"></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+    <div class="card">
+      <h2>Souscriptions assurance (12 mois)</h2>
+      <div id="chart-assurance" style="height:160px;"></div>
+    </div>
+    <div class="card">
+      <h2>Tickets support (8 semaines)</h2>
+      <div id="chart-support" style="height:160px;"></div>
+    </div>
+  </div>
+
+  <!-- Derniers crédits soumis -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Derniers dossiers soumis</h2>
+      <a href="/admin/credits/" style="font-size:.83rem;">Voir tout</a>
+    </div>
+    <div id="recent-credits"><div class="loading">Chargement</div></div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('welcome-title').textContent =
+  `Tableau de bord · ${getUser()?.username}`;
+
+// ── Charger les KPIs ──────────────────────────────────────
+async function loadDashboard() {
+  const res  = await apiFetch('/api/dashboard/');
+  const data = await res.json();
+
+  const credits   = data.credits;
+  const assurance = data.assurance;
+  const support   = data.support;
+
+  // Totaux par statut
+  const parStatut = {};
+  credits.par_statut.forEach(s => parStatut[s.status] = s.total);
+  const totalCredits = Object.values(parStatut).reduce((a,b) => a+b, 0);
+
+  document.getElementById('kpi-grid').innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-value">${totalCredits}</div>
+      <div class="kpi-label">Total crédits</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value">${credits.taux_recouvrement}%</div>
+      <div class="kpi-label">Taux de recouvrement</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value">${parStatut['DECAISSEE'] ?? 0}</div>
+      <div class="kpi-label">Crédits décaissés</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value">${assurance.polices_actives}</div>
+      <div class="kpi-label">Polices actives</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value">${assurance.expirations_proches}</div>
+      <div class="kpi-label">Expirations &lt; 30j</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value">${support.conversations_ouvertes + support.conversations_en_cours}</div>
+      <div class="kpi-label">Support en cours</div>
+    </div>`;
+
+  // Graphique statuts (barres horizontales simples)
+  renderStatuts(credits.par_statut);
+
+  // Courbes
+  renderBarChart('chart-credits',   credits.courbe,   'semaine', '#1a6cff');
+  renderBarChart('chart-assurance', assurance.courbe, 'mois',    '#2e7d32');
+  renderBarChart('chart-support',   support.courbe,   'semaine', '#e65100');
+}
+
+// ── Graphique statuts ─────────────────────────────────────
+function renderStatuts(parStatut) {
+  const colors = {
+    SOUMISE:'#e65100', EN_ANALYSE:'#1565c0', APPROUVEE:'#2e7d32',
+    DECAISSEE:'#6a1b9a', REFUSEE:'#c62828', SOLDEE:'#616161'
+  };
+  const el  = document.getElementById('chart-statuts');
+  const max = Math.max(...parStatut.map(s => s.total), 1);
+
+  el.innerHTML = parStatut.map(s => `
+    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;font-size:.8rem;">
+      <div style="width:80px;color:#555;text-align:right;flex-shrink:0;">${s.status}</div>
+      <div style="flex:1;background:#f0f0f0;border-radius:4px;height:16px;">
+        <div style="width:${Math.round(s.total/max*100)}%;background:${colors[s.status]||'#aaa'};height:100%;border-radius:4px;transition:width .4s;"></div>
+      </div>
+      <div style="width:24px;font-weight:600;color:#333;">${s.total}</div>
+    </div>`).join('');
+}
+
+// ── Mini bar chart générique ──────────────────────────────
+function renderBarChart(id, courbe, labelKey, color) {
+  const el  = document.getElementById(id);
+  const max = Math.max(...courbe.map(p => p.total), 1);
+
+  el.innerHTML = `
+    <div class="bar-chart">
+      ${courbe.map(p => `
+        <div class="bar-wrap" title="${p[labelKey]} : ${p.total}">
+          <div class="bar" style="height:${Math.max(p.total/max*130, 4)}px;background:${color};width:100%;"></div>
+          <div class="bar-label">${String(p[labelKey]).slice(-5)}</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+// ── Derniers crédits ──────────────────────────────────────
+async function loadRecentCredits() {
+  const res  = await apiFetch('/api/credits/');
+  const data = await res.json();
+  const el   = document.getElementById('recent-credits');
+  const top  = data.slice(0, 8);
+
+  if (!top.length) {
+    el.innerHTML = '<p style="color:#888;">Aucun crédit.</p>';
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Client</th><th>Montant</th><th>Score</th><th>Soumis le</th><th>Statut</th><th></th></tr>
+        </thead>
+        <tbody>
+          ${top.map(c => `
+            <tr>
+              <td>#${c.id}</td>
+              <td>${c.client_detail?.username || '—'}</td>
+              <td>${fmtMoney(c.montant)}</td>
+              <td>${c.score ?? '—'}</td>
+              <td>${fmtDate(c.date_soumission)}</td>
+              <td>${badge(c.status)}</td>
+              <td><a href="/admin/credits/${c.id}/" class="btn btn-sm btn-neutral">Voir</a></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+loadDashboard();
+loadRecentCredits();
+</script>
+{% endblock %}

@@ -1,0 +1,134 @@
+{% extends "common/base.html" %}
+{% block title %}Enregistrer un paiement — COFINANCE CI{% endblock %}
+
+{% block content %}
+<div class="container-sm">
+  <div style="margin-bottom:1rem;">
+    <a id="back-link" href="/agent/credits/" style="font-size:.85rem;">← Retour au dossier</a>
+  </div>
+  <div class="card">
+    <h2>Enregistrer un paiement</h2>
+    <div id="msg"></div>
+    <div id="installment-info" class="alert alert-info" style="display:none;margin-bottom:1rem;"></div>
+
+    <div class="form-group">
+      <label>Échéance *</label>
+      <input type="number" id="installment" placeholder="ID de l'échéance">
+    </div>
+    <div class="form-group">
+      <label>Montant reçu (FCFA) *</label>
+      <input type="number" id="montant_recu" placeholder="ex : 25000" min="1">
+    </div>
+    <div class="form-group">
+      <label>Méthode de paiement *</label>
+      <select id="methode_paiement">
+        <option value="CASH">Espèces</option>
+        <option value="ORANGE_MONEY">Orange Money</option>
+        <option value="WAVE">Wave</option>
+        <option value="MTN_MOMO">MTN Mobile Money</option>
+        <option value="MOOV_MONEY">Moov Money</option>
+      </select>
+    </div>
+    <div class="form-group" id="grp-mm" style="display:none;">
+      <label>Numéro Mobile Money *</label>
+      <input type="text" id="numero_mobile_money" placeholder="+225 07 00 00 00 00">
+    </div>
+    <div class="form-group">
+      <label>Référence transaction</label>
+      <input type="text" id="reference_transaction" placeholder="optionnel">
+    </div>
+    <div class="form-group">
+      <label>Note</label>
+      <textarea id="note" rows="2" style="width:100%;padding:.5rem;border:1px solid #ccc;border-radius:6px;font-size:.88rem;"></textarea>
+    </div>
+
+    <div style="display:flex;gap:.75rem;">
+      <button class="btn btn-success" id="btn-submit">Enregistrer le paiement</button>
+      <a id="cancel-link" href="/agent/credits/" class="btn btn-neutral">Annuler</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const params      = new URLSearchParams(window.location.search);
+const installId   = params.get('installment');
+const creditId    = params.get('credit');
+const echeanceNum = params.get('numero');
+const reste       = params.get('reste');
+
+// Pré-remplir depuis l'URL
+if (installId) document.getElementById('installment').value  = installId;
+if (reste)     document.getElementById('montant_recu').value = reste;
+if (creditId) {
+  document.getElementById('back-link').href   = `/agent/credits/${creditId}/`;
+  document.getElementById('cancel-link').href = `/agent/credits/${creditId}/`;
+}
+if (installId && echeanceNum && reste) {
+  const info = document.getElementById('installment-info');
+  info.style.display = '';
+  info.innerHTML = `Échéance <strong>#${echeanceNum}</strong> · Reste à payer : <strong>${fmtMoney(reste)}</strong>`;
+}
+
+// Toggle numéro MM
+document.getElementById('methode_paiement').addEventListener('change', function() {
+  document.getElementById('grp-mm').style.display = this.value === 'CASH' ? 'none' : '';
+});
+
+document.getElementById('btn-submit').addEventListener('click', async () => {
+  const msg    = document.getElementById('msg');
+  msg.innerHTML = '';
+
+  const installment         = document.getElementById('installment').value;
+  const montant_recu        = document.getElementById('montant_recu').value;
+  const methode_paiement    = document.getElementById('methode_paiement').value;
+  const numero_mobile_money = document.getElementById('numero_mobile_money').value.trim();
+  const reference           = document.getElementById('reference_transaction').value.trim();
+  const note                = document.getElementById('note').value.trim();
+
+  if (!installment || !montant_recu) {
+    msg.innerHTML = '<div class="alert alert-error">Échéance et montant sont obligatoires.</div>';
+    return;
+  }
+  if (methode_paiement !== 'CASH' && !numero_mobile_money) {
+    msg.innerHTML = '<div class="alert alert-error">Numéro Mobile Money obligatoire.</div>';
+    return;
+  }
+
+  const payload = { installment, montant_recu, methode_paiement };
+  if (numero_mobile_money) payload.numero_mobile_money = numero_mobile_money;
+  if (reference) payload.reference_transaction = reference;
+  if (note)      payload.note = note;
+
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+  btn.textContent = 'Enregistrement…';
+
+  try {
+    const res  = await apiFetch('/api/repayments/', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      const errors = Object.values(data).flat().join(' ');
+      msg.innerHTML = `<div class="alert alert-error">${errors}</div>`;
+      return;
+    }
+
+    flash('Paiement enregistré avec succès !', 'success');
+    setTimeout(() => {
+      window.location.href = creditId ? `/agent/credits/${creditId}/` : '/agent/credits/';
+    }, 1000);
+
+  } catch {
+    msg.innerHTML = '<div class="alert alert-error">Erreur réseau.</div>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Enregistrer le paiement';
+  }
+});
+</script>
+{% endblock %}
