@@ -13,7 +13,9 @@ class PaymentSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'installment', 'installment_detail',
             'agent', 'agent_detail',
-            'montant_recu', 'date_paiement', 'note', 'created_at'
+            'montant_recu', 'date_paiement',
+            'methode_paiement', 'numero_mobile_money', 'reference_transaction',
+            'note', 'created_at'
         ]
         read_only_fields = ['id', 'agent', 'created_at']
 
@@ -21,3 +23,11 @@ class PaymentSerializer(serializers.ModelSerializer):
         if value <= 0:
             raise serializers.ValidationError("Le montant reçu doit être supérieur à 0.")
         return value
+
+    def validate(self, data):
+        methode = data.get('methode_paiement', 'CASH')
+        if methode != 'CASH' and not data.get('numero_mobile_money'):
+            raise serializers.ValidationError(
+                {"numero_mobile_money": "Le numéro Mobile Money est obligatoire pour ce moyen de paiement."}
+            )
+        return data

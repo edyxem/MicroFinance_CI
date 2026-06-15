@@ -29,6 +29,7 @@ class CreditRequestSerializer(serializers.ModelSerializer):
             'id', 'client', 'client_detail', 'agent', 'agent_detail',
             'montant', 'duree_mois', 'taux_interet', 'status',
             'motif_refus', 'score', 'document',
+            'methode_decaissement', 'numero_decaissement',
             'date_soumission', 'date_decaissement', 'updated_at',
             'installments'
         ]
@@ -41,11 +42,17 @@ class CreditRequestSerializer(serializers.ModelSerializer):
 class CreditStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = CreditRequest
-        fields = ['status', 'motif_refus', 'date_decaissement']
+        fields = ['status', 'motif_refus', 'date_decaissement', 'methode_decaissement', 'numero_decaissement']
 
     def validate(self, data):
         status = data.get('status')
         motif_refus = data.get('motif_refus')
         if status == 'REFUSEE' and not motif_refus:
             raise serializers.ValidationError({"motif_refus": "Le motif de refus est obligatoire."})
+        if status == 'DECAISSEE':
+            methode = data.get('methode_decaissement', 'CASH')
+            if methode != 'CASH' and not data.get('numero_decaissement'):
+                raise serializers.ValidationError(
+                    {"numero_decaissement": "Le numéro Mobile Money de décaissement est obligatoire pour ce moyen de paiement."}
+                )
         return data

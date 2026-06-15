@@ -180,6 +180,8 @@
       "motif_refus": null,
       "score": 78,
       "document": "",
+      "methode_decaissement": "ORANGE_MONEY",
+      "numero_decaissement": "+225 07 11 22 33 44",
       "date_soumission": "2026-02-01T08:00:00Z",
       "date_decaissement": "2026-02-05",
       "updated_at": "2026-02-05T10:00:00Z"
@@ -198,6 +200,8 @@
       "motif_refus": null,
       "score": 65,
       "document": "",
+      "methode_decaissement": "CASH",
+      "numero_decaissement": "",
       "date_soumission": "2026-02-10T08:00:00Z",
       "date_decaissement": null,
       "updated_at": "2026-02-12T10:00:00Z"
@@ -216,6 +220,8 @@
       "motif_refus": null,
       "score": null,
       "document": "",
+      "methode_decaissement": "CASH",
+      "numero_decaissement": "",
       "date_soumission": "2026-03-01T08:00:00Z",
       "date_decaissement": null,
       "updated_at": "2026-03-01T08:00:00Z"
@@ -234,6 +240,8 @@
       "motif_refus": "Score de crédit insuffisant — historique de remboursement incomplet.",
       "score": 32,
       "document": "",
+      "methode_decaissement": "CASH",
+      "numero_decaissement": "",
       "date_soumission": "2026-02-20T08:00:00Z",
       "date_decaissement": null,
       "updated_at": "2026-02-22T10:00:00Z"
@@ -252,6 +260,8 @@
       "motif_refus": null,
       "score": null,
       "document": "",
+      "methode_decaissement": "CASH",
+      "numero_decaissement": "",
       "date_soumission": "2026-03-10T08:00:00Z",
       "date_decaissement": null,
       "updated_at": "2026-03-10T08:00:00Z"
@@ -382,6 +392,9 @@
       "agent": 2,
       "montant_recu": "85416.67",
       "date_paiement": "2026-03-04",
+      "methode_paiement": "CASH",
+      "numero_mobile_money": "",
+      "reference_transaction": "",
       "note": "Paiement reçu en espèces au bureau Yopougon.",
       "created_at": "2026-03-04T10:00:00Z"
     }
@@ -394,6 +407,9 @@
       "agent": 2,
       "montant_recu": "85416.67",
       "date_paiement": "2026-04-03",
+      "methode_paiement": "WAVE",
+      "numero_mobile_money": "+225 07 11 22 33 44",
+      "reference_transaction": "WAVE-TXN-20260403-001",
       "note": "Paiement reçu via Mobile Money.",
       "created_at": "2026-04-03T10:00:00Z"
     }

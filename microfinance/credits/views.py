@@ -112,11 +112,21 @@ class CreditStatusView(APIView):
             elif nouveau_status == 'REFUSEE':
                 serializer.save(status=nouveau_status)
 
+            credit.refresh_from_db()
+            if nouveau_status == 'DECAISSEE' and credit.methode_decaissement != 'CASH':
+                message_credit = (
+                    f"Le statut de votre demande #{credit.pk} est passé à {nouveau_status}. "
+                    f"Décaissement via {credit.get_methode_decaissement_display()} "
+                    f"({credit.numero_decaissement})."
+                )
+            else:
+                message_credit = f"Le statut de votre demande #{credit.pk} est passé à {nouveau_status}."
+
             create_notification(
                 destinataires=[credit.client],
                 type='CREDIT',
                 titre=f"Votre crédit est {nouveau_status.lower()}",
-                message=f"Le statut de votre demande #{credit.pk} est passé à {nouveau_status}."
+                message=message_credit
             )
             return Response(CreditRequestSerializer(credit).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

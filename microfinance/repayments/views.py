@@ -38,11 +38,20 @@ class PaymentCreateView(APIView):
                     message=f"Félicitations ! Votre crédit #{credit.pk} est entièrement remboursé."
                 )
 
+            if payment.methode_paiement != 'CASH':
+                message_paiement = (
+                    f"Un paiement de {montant_recu} FCFA via {payment.get_methode_paiement_display()} "
+                    f"a été enregistré sur votre échéance #{installment.numero} "
+                    f"(réf : {payment.reference_transaction or 'N/A'})."
+                )
+            else:
+                message_paiement = f"Un paiement de {montant_recu} FCFA a été enregistré sur votre échéance #{installment.numero}."
+
             create_notification(
                 destinataires=[credit.client],
                 type='REMBOURSEMENT',
                 titre='Paiement enregistré',
-                message=f"Un paiement de {montant_recu} FCFA a été enregistré sur votre échéance #{installment.numero}."
+                message=message_paiement
             )
             return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

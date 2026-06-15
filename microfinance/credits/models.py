@@ -11,18 +11,27 @@ class CreditRequest(models.Model):
         ('REFUSEE',     'Refusée'),
         ('SOLDEE',      'Soldée'),
     ]
-    client             = models.ForeignKey(User, on_delete=models.CASCADE, related_name='credit_requests')
-    agent              = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='assigned_credits')
-    montant            = models.DecimalField(max_digits=12, decimal_places=2)
-    duree_mois         = models.IntegerField()
-    taux_interet       = models.DecimalField(max_digits=5, decimal_places=2, default=2.5)
-    status             = models.CharField(max_length=20, choices=STATUS_CHOICES, default='SOUMISE')
-    motif_refus        = models.TextField(blank=True, null=True)
-    score              = models.IntegerField(null=True, blank=True)
-    document           = models.FileField(upload_to='credits/documents/', blank=True, null=True)
-    date_soumission    = models.DateTimeField(auto_now_add=True)
-    date_decaissement  = models.DateField(null=True, blank=True)
-    updated_at         = models.DateTimeField(auto_now=True)
+    METHODE_CHOICES = [
+        ('CASH',          'Espèces'),
+        ('ORANGE_MONEY',  'Orange Money'),
+        ('WAVE',          'Wave'),
+        ('MTN_MOMO',      'MTN Mobile Money'),
+        ('MOOV_MONEY',    'Moov Money'),
+    ]
+    client               = models.ForeignKey(User, on_delete=models.CASCADE, related_name='credit_requests')
+    agent                = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='assigned_credits')
+    montant              = models.DecimalField(max_digits=12, decimal_places=2)
+    duree_mois           = models.IntegerField()
+    taux_interet         = models.DecimalField(max_digits=5, decimal_places=2, default=2.5)
+    status               = models.CharField(max_length=20, choices=STATUS_CHOICES, default='SOUMISE')
+    motif_refus          = models.TextField(blank=True, null=True)
+    score                = models.IntegerField(null=True, blank=True)
+    document             = models.FileField(upload_to='credits/documents/', blank=True, null=True)
+    methode_decaissement = models.CharField(max_length=20, choices=METHODE_CHOICES, default='CASH')
+    numero_decaissement  = models.CharField(max_length=20, blank=True)
+    date_soumission      = models.DateTimeField(auto_now_add=True)
+    date_decaissement    = models.DateField(null=True, blank=True)
+    updated_at           = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Crédit #{self.pk} — {self.client.username} — {self.status}"
