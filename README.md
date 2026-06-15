@@ -84,7 +84,7 @@ Le site est maintenant accessible sur http://127.0.0.1:8000
 
 ## Comptes de démonstration
 
-Tous les comptes ont le même mot de passe : `password123`
+Tous les comptes ont le même mot de passe : `role123`
 
 | Utilisateur | Rôle | Région |
 |---|---|---|
