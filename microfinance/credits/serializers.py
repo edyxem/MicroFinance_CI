@@ -14,7 +14,7 @@ class InstallmentSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id']
 
-    def get_reste_a_payer(self, obj):
+    def get_reste_a_payer(self, obj) -> float:
         return obj.get_reste_a_payer()
 
 

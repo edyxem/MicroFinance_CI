@@ -84,4 +84,50 @@ async function loadCredit() {
     if (prochaines.length) {
       document.getElementById('card-echeances').style.display = '';
       const tbody = document.getElementById('tbody-echeances');
-      tbody.innerHTML =
+      tbody.innerHTML = prochaines.map(e => `
+        <tr>
+          <td>${e.numero}</td>
+          <td>${fmtDate(e.date_prevue)}</td>
+          <td>${fmtMoney(e.montant_du)}</td>
+          <td>${e.penalite > 0 ? fmtMoney(e.penalite) : '—'}</td>
+          <td>${fmtMoney(e.montant_paye)}</td>
+          <td><strong>${fmtMoney(e.reste_a_payer)}</strong></td>
+          <td>${badge(e.status)}</td>
+        </tr>`).join('');
+    }
+  }
+}
+
+// ── Notifications récentes ────────────────────────────────
+async function loadNotifs() {
+  const res  = await apiFetch('/api/notifications/');
+  const data = await res.json();
+  const el   = document.getElementById('notif-content');
+  const top5 = data.slice(0, 5);
+
+  if (!top5.length) {
+    el.innerHTML = '<p style="color:#888;font-size:.88rem;">Aucune notification.</p>';
+    return;
+  }
+
+  el.innerHTML = top5.map(n => `
+    <div class="notif-item ${n.is_read ? 'read' : ''}">
+      <div class="notif-body">
+        <div class="notif-title">${n.titre}</div>
+        <div class="notif-msg">${n.message}</div>
+        <div class="notif-date">${fmtDatetime(n.created_at)}</div>
+      </div>
+      ${!n.is_read ? `<button class="btn btn-sm btn-neutral" onclick="markRead(${n.id}, this)">Lu</button>` : ''}
+    </div>`).join('');
+}
+
+async function markRead(id, btn) {
+  await apiFetch(`/api/notifications/${id}/read/`, { method: 'POST' });
+  btn.closest('.notif-item').classList.add('read');
+  btn.remove();
+}
+
+loadCredit();
+loadNotifs();
+</script>
+{% endblock %}

@@ -6,11 +6,15 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from .models import Notification
 from .serializers import NotificationSerializer
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter, inline_serializer
+from rest_framework import serializers as drf_serializers
 
 
 class NotificationListView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(parameters=[OpenApiParameter("type", str, description="Filtre par type")],
+                   responses=NotificationSerializer(many=True), tags=["Notifications"])
     def get(self, request):
         notifications = Notification.objects.filter(destinataire=request.user)
         type_filter = request.query_params.get('type')
@@ -23,6 +27,7 @@ class NotificationListView(APIView):
 class NotificationMarkReadView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=None, responses={200: OpenApiResponse(description="Marquée comme lue")}, tags=["Notifications"])
     def post(self, request, pk):
         try:
             notification = Notification.objects.get(pk=pk, destinataire=request.user)
@@ -36,6 +41,7 @@ class NotificationMarkReadView(APIView):
 class NotificationMarkAllReadView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=None, responses={200: OpenApiResponse(description="Toutes marquées lues")}, tags=["Notifications"])
     def post(self, request):
         Notification.objects.filter(
             destinataire=request.user,
@@ -47,6 +53,7 @@ class NotificationMarkAllReadView(APIView):
 class NotificationUnreadCountView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=inline_serializer("UnreadCount", {"unread_count": drf_serializers.IntegerField()}), tags=["Notifications"])
     def get(self, request):
         count = Notification.objects.filter(
             destinataire=request.user,

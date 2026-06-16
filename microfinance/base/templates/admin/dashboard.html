@@ -7,8 +7,8 @@
   <div class="card-header" style="margin-bottom:1rem;">
     <h1 style="font-size:1.2rem;color:#1a1a2e;" id="welcome-title">Tableau de bord</h1>
     <div class="shortcut-bar">
-      <a href="/admin/reports/" class="btn btn-neutral btn-sm">📊 Rapports</a>
-      <a href="/admin/users/" class="btn btn-neutral btn-sm">👤 Utilisateurs</a>
+      <a href="/gestion/reports/" class="btn btn-neutral btn-sm">📊 Rapports</a>
+      <a href="/gestion/users/" class="btn btn-neutral btn-sm">👤 Utilisateurs</a>
     </div>
   </div>
 
@@ -49,7 +49,7 @@
   <div class="card">
     <div class="card-header">
       <h2>Derniers dossiers soumis</h2>
-      <a href="/admin/credits/" style="font-size:.83rem;">Voir tout</a>
+      <a href="/gestion/credits/" style="font-size:.83rem;">Voir tout</a>
     </div>
     <div id="recent-credits"><div class="loading">Chargement</div></div>
   </div>
@@ -172,7 +172,7 @@ async function loadRecentCredits() {
               <td>${c.score ?? '—'}</td>
               <td>${fmtDate(c.date_soumission)}</td>
               <td>${badge(c.status)}</td>
-              <td><a href="/admin/credits/${c.id}/" class="btn btn-sm btn-neutral">Voir</a></td>
+              <td><a href="/gestion/credits/${c.id}/" class="btn btn-sm btn-neutral">Voir</a></td>
             </tr>`).join('')}
         </tbody>
       </table>

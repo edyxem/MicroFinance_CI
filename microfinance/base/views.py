@@ -3,8 +3,11 @@ from django.views import View
 
 
 def template_view(template):
-    """Raccourci : retourne une view qui rend un template."""
-    def view(request):
+    """Raccourci : retourne une view qui rend un template.
+    Accepte les kwargs d'URL (ex: pk) même si le template n'en a pas besoin.
+    La protection auth est gérée côté JS par api.js (token JWT dans localStorage).
+    """
+    def view(request, **kwargs):
         return render(request, template)
     return view
 

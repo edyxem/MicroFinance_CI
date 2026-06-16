@@ -51,19 +51,34 @@
 {% block extra_js %}
 <script>
 // ── Exports ───────────────────────────────────────────────
-function exportCSV() {
-  const status  = document.getElementById('csv-status').value;
-  const url     = `/api/reports/credits/csv/${status ? `?status=${status}` : ''}`;
-  // Téléchargement direct (endpoint renvoie une réponse Django avec Content-Disposition)
-  const a       = document.createElement('a');
-  a.href        = url;
-  a.click();
+async function exportCSV() {
+  const status = document.getElementById('csv-status').value;
+  const url    = `/api/reports/credits/csv/${status ? `?status=${status}` : ''}`;
+  flash('Génération du CSV…', 'info');
+  try {
+    const res = await apiFetch(url);
+    if (!res.ok) { flash('Erreur lors de la génération du CSV.', 'error'); return; }
+    const blob = await res.blob();
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = `credits_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch { flash('Erreur réseau.', 'error'); }
 }
 
-function exportPDF() {
-  const a  = document.createElement('a');
-  a.href   = '/api/reports/rapport/pdf/';
-  a.click();
+async function exportPDF() {
+  flash('Génération du PDF…', 'info');
+  try {
+    const res = await apiFetch('/api/reports/rapport/pdf/');
+    if (!res.ok) { flash('Erreur lors de la génération du PDF.', 'error'); return; }
+    const blob = await res.blob();
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = `rapport_${new Date().toISOString().slice(0,10)}.pdf`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch { flash('Erreur réseau.', 'error'); }
 }
 
 // ── Récapitulatif ──────────────────────────────────────────

@@ -8,11 +8,13 @@ from .models import Conversation, Message
 from .serializers import ConversationSerializer, MessageSerializer
 from accounts.permissions import IsAgentOrAdmin, IsClient
 from notifications.utils import create_notification
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
 
 
 class ConversationListView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(parameters=[OpenApiParameter("status", str)], responses=ConversationSerializer(many=True), tags=["Chat"])
     def get(self, request):
         if request.user.role == 'CLIENT':
             conversations = Conversation.objects.filter(client=request.user)
@@ -24,6 +26,7 @@ class ConversationListView(APIView):
         serializer = ConversationSerializer(conversations, many=True)
         return Response(serializer.data)
 
+    @extend_schema(request=None, responses=ConversationSerializer, tags=["Chat"])
     def post(self, request):
         if request.user.role != 'CLIENT':
             return Response(
@@ -58,6 +61,7 @@ class ConversationDetailView(APIView):
         except Conversation.DoesNotExist:
             return None
 
+    @extend_schema(responses=ConversationSerializer, tags=["Chat"])
     def get(self, request, pk):
         conversation = self.get_object(pk, request.user)
         if not conversation:
@@ -68,6 +72,7 @@ class ConversationDetailView(APIView):
 class ConversationAssignView(APIView):
     permission_classes = [IsAuthenticated, IsAgentOrAdmin]
 
+    @extend_schema(request=None, responses=ConversationSerializer, tags=["Chat"])
     def post(self, request, pk):
         try:
             conversation = Conversation.objects.get(pk=pk)
@@ -82,6 +87,7 @@ class ConversationAssignView(APIView):
 class ConversationCloseView(APIView):
     permission_classes = [IsAuthenticated, IsAgentOrAdmin]
 
+    @extend_schema(request=None, responses={200: OpenApiResponse(description="Conversation clôturée")}, tags=["Chat"])
     def post(self, request, pk):
         try:
             conversation = Conversation.objects.get(pk=pk)
@@ -101,6 +107,7 @@ class ConversationCloseView(APIView):
 class MessageListView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=MessageSerializer(many=True), tags=["Chat"])
     def get(self, request, conversation_pk):
         try:
             conversation = Conversation.objects.get(pk=conversation_pk)
@@ -116,6 +123,7 @@ class MessageListView(APIView):
 class MessageCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=MessageSerializer, responses=MessageSerializer, tags=["Chat"])
     def post(self, request, conversation_pk):
         try:
             conversation = Conversation.objects.get(pk=conversation_pk)

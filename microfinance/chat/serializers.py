@@ -38,5 +38,5 @@ class ConversationSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'client', 'status', 'created_at', 'updated_at']
 
-    def get_nb_messages(self, obj):
+    def get_nb_messages(self, obj) -> int:
         return obj.messages.count()

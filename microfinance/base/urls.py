@@ -29,10 +29,11 @@ urlpatterns = [
     path('agent/conversations/<int:pk>/',       template_view('agent/chat_detail.html'),        name='agent-chat-detail'),
 
     # ── Espace admin ──────────────────────────────────────
-    path('admin-dashboard/',        template_view('admin/dashboard.html'),          name='admin-dashboard'),
-    path('admin/credits/',          template_view('admin/credit_list.html'),        name='admin-credit-list'),
-    path('admin/credits/<int:pk>/', template_view('admin/credit_detail.html'),      name='admin-credit-detail'),
-    path('admin/users/',            template_view('admin/users.html'),              name='admin-users'),
-    path('admin/insurance/',        template_view('admin/insurance_catalog.html'),  name='admin-insurance'),
-    path('admin/reports/',          template_view('admin/reports.html'),            name='admin-reports'),
+    # Note : on évite le préfixe /admin/ réservé au Django admin → /gestion/
+    path('admin-dashboard/',            template_view('admin/dashboard.html'),          name='admin-dashboard'),
+    path('gestion/credits/',            template_view('admin/credit_list.html'),        name='admin-credit-list'),
+    path('gestion/credits/<int:pk>/',   template_view('admin/credit_detail.html'),      name='admin-credit-detail'),
+    path('gestion/users/',              template_view('admin/users.html'),              name='admin-users'),
+    path('gestion/insurance/',          template_view('admin/insurance_catalog.html'),  name='admin-insurance'),
+    path('gestion/reports/',            template_view('admin/reports.html'),            name='admin-reports'),
 ]

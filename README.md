@@ -80,22 +80,32 @@ python manage.py runserver
 
 Le site est maintenant accessible sur http://127.0.0.1:8000
 
+**7. (Optionnel) Tâches planifiées quotidiennes**
+
+Les alertes d'échéance (J-3, retard J+1) et d'expiration d'assurance (J-15, passage automatique en *Expirée*) sont regroupées dans une commande à lancer chaque jour (via `cron` en production) :
+
+```bash
+python manage.py run_daily_tasks
+```
+
 ---
 
 ## Comptes de démonstration
 
-Tous les comptes ont le même mot de passe : `role123`
+Le mot de passe dépend du rôle : `admin123` pour l'administrateur, `agent123` pour les agents, `client123` pour les clients.
 
-| Utilisateur | Rôle | Région |
+| Utilisateur | Rôle | Mot de passe |
 |---|---|---|
-| tossou_admin | Administrateur | Abidjan-Plateau |
-| operi_carla | Agent de terrain | Abidjan-Yopougon |
-| nguessan_charles | Agent de terrain | Abidjan-Yopougon |
-| aloukou_ariel | Client | — |
-| gauli_samuel | Client | — |
-| ehoussou_petuel | Client | — |
-| oulai_michel | Client | — |
-| yao_christ | Client | — |
+| tossou | Administrateur | `admin123` |
+| operi | Agent de terrain | `agent123` |
+| nguessan | Agent de terrain | `agent123` |
+| kouame | Agent de terrain | `agent123` |
+| aloukou | Client | `client123` |
+| gauli | Client | `client123` |
+| ehoussou | Client | `client123` |
+| yao | Client | `client123` |
+
+*(12 comptes clients au total : aloukou, gauli, ehoussou, oulai, yao, diabate, kone, bamba, gnagne, soro, toure, gbagbo.)*
 
 ---
 

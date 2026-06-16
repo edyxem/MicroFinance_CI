@@ -10,11 +10,14 @@ from accounts.permissions import IsAdmin
 from credits.models import CreditRequest
 from repayments.models import Payment
 from django.db.models import Sum
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
 
 
 class ExportCreditsCSVView(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]
 
+    @extend_schema(parameters=[OpenApiParameter("status", str)],
+                   responses={200: OpenApiResponse(description="Fichier CSV des crédits")}, tags=["Rapports"])
     def get(self, request):
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="credits.csv"'
@@ -40,6 +43,7 @@ class ExportCreditsCSVView(APIView):
 class ExportRapportPDFView(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]
 
+    @extend_schema(responses={200: OpenApiResponse(description="Rapport mensuel PDF")}, tags=["Rapports"])
     def get(self, request):
         buffer = BytesIO()
         pdf = canvas.Canvas(buffer, pagesize=A4)

@@ -185,14 +185,15 @@ document.getElementById('modal-confirm').addEventListener('click', async () => {
   btn.disabled = true;
 
   const res  = await apiFetch(`/api/credits/${creditId}/status/`, {
-    method: 'PATCH',
+    method: 'POST',
     body: JSON.stringify(payload)
   });
 
   if (res.ok) {
     flash('Statut mis à jour !', 'success');
     closeModal();
-    load(); // Recharger
+    btn.disabled = false;
+    load();
   } else {
     const err = await res.json();
     flash(Object.values(err).flat().join(' '), 'error');

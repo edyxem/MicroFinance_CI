@@ -155,6 +155,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def _save_message(self, contenu):
         try:
+            from notifications.utils import create_notification
             conv = Conversation.objects.get(pk=self.conversation_id)
             if conv.status == "RESOLUE":
                 return None
@@ -162,11 +163,39 @@ class ChatConsumer(AsyncWebsocketConsumer):
             if conv.status == "OUVERTE" and self.user.role in ("AGENT", "ADMIN"):
                 conv.status = "EN_COURS"
                 conv.save(update_fields=["status", "updated_at"])
-            return Message.objects.create(
+
+            message = Message.objects.create(
                 conversation=conv,
                 expediteur=self.user,
                 contenu=contenu,
             )
+
+            # ── Notification au destinataire ──────────────────────────────
+            extrait = contenu[:60] + ("…" if len(contenu) > 60 else "")
+            if self.user.role == "CLIENT":
+                # Client → notifier l'agent assigné (ou tous les agents si non assigné)
+                if conv.agent:
+                    destinataires = [conv.agent]
+                else:
+                    from accounts.models import User
+                    destinataires = list(User.objects.filter(role="AGENT", is_active=True))
+                create_notification(
+                    destinataires=destinataires,
+                    type="SUPPORT",
+                    titre=f"Nouveau message de {self.user.username}",
+                    message=f"Conv #{conv.id} : « {extrait} »",
+                )
+            else:
+                # Agent/Admin → notifier le client
+                create_notification(
+                    destinataires=[conv.client],
+                    type="SUPPORT",
+                    titre=f"Réponse de {self.user.username}",
+                    message=f"« {extrait} »",
+                )
+
+            return message
+
         except Conversation.DoesNotExist:
             return None
 

@@ -31,7 +31,10 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 # Application definition
 
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -153,6 +156,10 @@ SPECTACULAR_SETTINGS = {
     'TITLE':       'COFINANCE CI API',
     'DESCRIPTION': 'API REST de la plateforme de microfinance',
     'VERSION':     '1.0.0',
+    'ENUM_NAME_OVERRIDES': {
+        'CreditStatusEnum':  'credits.models.CreditRequest.STATUS_CHOICES',
+        'MethodePaiementEnum': 'repayments.models.Payment.METHODE_CHOICES',
+    },
 }
 
 # User custom

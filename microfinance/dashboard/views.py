@@ -9,11 +9,14 @@ from credits.models import CreditRequest, Installment
 from insurance.models import Policy
 from chat.models import Conversation
 from repayments.models import Payment
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 
 class DashboardKPIView(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]
 
+    @extend_schema(responses={200: OpenApiResponse(description="KPIs agrégés (crédits, assurance, support) + courbes")},
+                   tags=["Dashboard"])
     def get(self, request):
         today = timezone.now().date()
 

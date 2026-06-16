@@ -127,10 +127,10 @@ function badge(status) {
     ],
     ADMIN: [
       ['/admin-dashboard/', 'Tableau de bord'],
-      ['/admin/credits/', 'Crédits'],
-      ['/admin/users/', 'Utilisateurs'],
-      ['/admin/insurance/', 'Assurance'],
-      ['/admin/reports/', 'Rapports'],
+      ['/gestion/credits/', 'Crédits'],
+      ['/gestion/users/', 'Utilisateurs'],
+      ['/gestion/insurance/', 'Assurance'],
+      ['/gestion/reports/', 'Rapports'],
     ],
   };
 

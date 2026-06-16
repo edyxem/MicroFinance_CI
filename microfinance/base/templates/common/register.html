@@ -84,13 +84,15 @@ document.getElementById('btn-register').addEventListener('click', async () => {
     const res  = await fetch('/api/auth/register/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, email, password, phone, region })
+      body: JSON.stringify({ username, email, password, password2, phone, region })
     });
     const data = await res.json();
 
     if (!res.ok) {
-      const errors = Object.values(data).flat().join(' ');
-      msg.innerHTML = `<div class="alert alert-error">${errors}</div>`;
+      const lignes = Object.entries(data)
+        .map(([champ, msgs]) => `<strong>${champ}</strong> : ${[].concat(msgs).join(' ')}`)
+        .join('<br>');
+      msg.innerHTML = `<div class="alert alert-error">${lignes}</div>`;
       return;
     }
 

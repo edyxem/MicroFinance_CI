@@ -4,7 +4,7 @@
 {% block content %}
 <div class="container">
   <div style="margin-bottom:1rem;">
-    <a href="/admin/credits/" style="font-size:.85rem;">← Retour aux crédits</a>
+    <a href="/gestion/credits/" style="font-size:.85rem;">← Retour aux crédits</a>
   </div>
   <div id="content"><div class="loading">Chargement</div></div>
 </div>
@@ -43,19 +43,19 @@ function render() {
   const actions = getActions(c.status);
 
   const rows = [
-    ['Client',              `${c.client_detail?.username} (${c.client_detail?.email || '—'})`],
-    ['Région',              c.client_detail?.region || '—'],
-    ['Montant',             fmtMoney(c.montant)],
-    ['Durée',               `${c.duree_mois} mois`],
-    ['Taux d\'intérêt',     `${c.taux_interet}%`],
-    ['Score d\'éligibilité',c.score ? `<strong>${c.score}/100</strong>` : '—'],
-    ['Statut',              badge(c.status)],
-    ['Méthode décaissement',c.methode_decaissement],
-    ['N° Mobile Money',     c.numero_decaissement || '—'],
-    ['Soumis le',           fmtDatetime(c.date_soumission)],
-    ['Décaissé le',         c.date_decaissement ? fmtDate(c.date_decaissement) : '—'],
-    ['Dernière MàJ',        fmtDatetime(c.updated_at)],
-    ['Agent assigné',       c.agent_detail?.username || '—'],
+    ['Client',               `${c.client_detail?.username} (${c.client_detail?.email || '—'})`],
+    ['Région',               c.client_detail?.region || '—'],
+    ['Montant',              fmtMoney(c.montant)],
+    ['Durée',                `${c.duree_mois} mois`],
+    ["Taux d'intérêt",       `${c.taux_interet}%`],
+    ["Score d'éligibilité",  c.score ? `<strong>${c.score}/100</strong>` : '—'],
+    ['Statut',               badge(c.status)],
+    ['Méthode décaissement', c.methode_decaissement],
+    ['N° Mobile Money',      c.numero_decaissement || '—'],
+    ['Soumis le',            fmtDatetime(c.date_soumission)],
+    ['Décaissé le',          c.date_decaissement ? fmtDate(c.date_decaissement) : '—'],
+    ['Dernière MàJ',         fmtDatetime(c.updated_at)],
+    ['Agent assigné',        c.agent_detail?.username || '—'],
   ].map(([k,v]) => `<tr><td style="color:#666;width:200px;font-size:.85rem;">${k}</td><td>${v}</td></tr>`).join('');
 
   let motifHtml = '';
@@ -188,13 +188,22 @@ document.getElementById('modal-confirm').addEventListener('click', async () => {
   btn.disabled = true;
 
   const res = await apiFetch(`/api/credits/${creditId}/status/`, {
-    method: 'PATCH',
+    method: 'POST',
     body: JSON.stringify(payload)
   });
 
   if (res.ok) {
     flash('Statut mis à jour !', 'success');
     closeModal();
+    btn.disabled = false;
     load();
   } else {
-    const err =
+    const err = await res.json();
+    flash(Object.values(err).flat().join(' '), 'error');
+    btn.disabled = false;
+  }
+});
+
+load();
+</script>
+{% endblock %}

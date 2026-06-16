@@ -5,7 +5,7 @@
 <div class="container">
   <div class="card-header" style="margin-bottom:1rem;">
     <h1 style="font-size:1.2rem;color:#1a1a2e;">Gestion des crédits</h1>
-    <a href="/admin/reports/" class="btn btn-neutral btn-sm">📥 Exporter CSV</a>
+    <a href="/gestion/reports/" class="btn btn-neutral btn-sm">📥 Exporter CSV</a>
   </div>
 
   <!-- Filtres -->
@@ -65,7 +65,7 @@ function render(data) {
               <td>${fmtDate(c.date_soumission)}</td>
               <td>${badge(c.status)}</td>
               <td>${c.agent_detail?.username || '<span style="color:#aaa;">—</span>'}</td>
-              <td><a href="/admin/credits/${c.id}/" class="btn btn-sm btn-neutral">Voir</a></td>
+              <td><a href="/gestion/credits/${c.id}/" class="btn btn-sm btn-neutral">Voir</a></td>
             </tr>`).join('')}
         </tbody>
       </table>

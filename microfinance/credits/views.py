@@ -11,11 +11,14 @@ from .serializers import CreditRequestSerializer, CreditStatusSerializer, Instal
 from .utils import calculer_score, generer_echeancier
 from accounts.permissions import IsClient, IsAgentOrAdmin
 from notifications.utils import create_notification
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
 
 
 class CreditListView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(parameters=[OpenApiParameter("status", str, description="Filtre par statut (agents/admin)")],
+                   responses=CreditRequestSerializer(many=True), tags=["Crédits"])
     def get(self, request):
         if request.user.role == 'CLIENT':
             credits = CreditRequest.objects.filter(client=request.user)
@@ -27,6 +30,7 @@ class CreditListView(APIView):
         serializer = CreditRequestSerializer(credits, many=True)
         return Response(serializer.data)
 
+    @extend_schema(request=CreditRequestSerializer, responses=CreditRequestSerializer, tags=["Crédits"])
     def post(self, request):
         if request.user.role != 'CLIENT':
             return Response(
@@ -67,6 +71,7 @@ class CreditDetailView(APIView):
         except CreditRequest.DoesNotExist:
             return None
 
+    @extend_schema(responses=CreditRequestSerializer, tags=["Crédits"])
     def get(self, request, pk):
         credit = self.get_object(pk, request.user)
         if not credit:
@@ -77,6 +82,7 @@ class CreditDetailView(APIView):
 class CreditStatusView(APIView):
     permission_classes = [IsAuthenticated, IsAgentOrAdmin]
 
+    @extend_schema(request=CreditStatusSerializer, responses=CreditRequestSerializer, tags=["Crédits"])
     def post(self, request, pk):
         try:
             credit = CreditRequest.objects.get(pk=pk)
@@ -137,6 +143,7 @@ class CreditStatusView(APIView):
 class InstallmentListView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=InstallmentSerializer(many=True), tags=["Crédits"])
     def get(self, request, credit_pk):
         try:
             credit = CreditRequest.objects.get(pk=credit_pk)
@@ -164,7 +171,7 @@ class AdminDashboardView(View):
 
 class CreditListPageView(View):
     def get(self, request):
-        return render(request, 'client/credits.html')
+        return render(request, 'client/credit_list.html')
 
 class CreditFormView(View):
     def get(self, request):

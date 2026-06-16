@@ -7,6 +7,8 @@ from accounts.serializers import UserSerializer
 class PaymentSerializer(serializers.ModelSerializer):
     installment_detail = InstallmentSerializer(source='installment', read_only=True)
     agent_detail = UserSerializer(source='agent', read_only=True)
+    # Date facultative : si l'agent ne la fournit pas, la vue prend la date du jour.
+    date_paiement = serializers.DateField(required=False)
 
     class Meta:
         model = Payment

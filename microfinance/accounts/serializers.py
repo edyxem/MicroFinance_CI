@@ -4,8 +4,9 @@ from .models import User, LoginHistory
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, validators=[validate_password])
+    password  = serializers.CharField(write_only=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True)
+    email     = serializers.EmailField(required=False, allow_blank=True, default='')
 
     class Meta:
         model = User

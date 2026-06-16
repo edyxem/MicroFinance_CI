@@ -13,7 +13,8 @@
 
     <div class="form-group">
       <label>Échéance *</label>
-      <input type="number" id="installment" placeholder="ID de l'échéance">
+      <input type="number" id="installment" style="display:none;">
+      <div id="installment-display" style="padding:.5rem .75rem;background:var(--color-background-secondary);border-radius:var(--border-radius-md);font-size:.9rem;color:var(--color-text-primary);border:0.5px solid var(--color-border-tertiary);">—</div>
     </div>
     <div class="form-group">
       <label>Montant reçu (FCFA) *</label>
@@ -59,8 +60,11 @@ const echeanceNum = params.get('numero');
 const reste       = params.get('reste');
 
 // Pré-remplir depuis l'URL
-if (installId) document.getElementById('installment').value  = installId;
-if (reste)     document.getElementById('montant_recu').value = reste;
+if (installId) {
+  document.getElementById('installment').value = installId;
+  document.getElementById('installment-display').textContent = echeanceNum ? `Échéance #${echeanceNum}` : `ID ${installId}`;
+}
+if (reste)     document.getElementById('montant_recu').value = parseFloat(reste);
 if (creditId) {
   document.getElementById('back-link').href   = `/agent/credits/${creditId}/`;
   document.getElementById('cancel-link').href = `/agent/credits/${creditId}/`;
@@ -113,8 +117,10 @@ document.getElementById('btn-submit').addEventListener('click', async () => {
     const data = await res.json();
 
     if (!res.ok) {
-      const errors = Object.values(data).flat().join(' ');
-      msg.innerHTML = `<div class="alert alert-error">${errors}</div>`;
+      const lignes = Object.entries(data)
+        .map(([champ, msgs]) => `<strong>${champ}</strong> : ${[].concat(msgs).join(' ')}`)
+        .join('<br>');
+      msg.innerHTML = `<div class="alert alert-error">${lignes}</div>`;
       return;
     }
 

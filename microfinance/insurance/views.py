@@ -10,16 +10,19 @@ from .models import InsuranceProduct, Policy
 from .serializers import InsuranceProductSerializer, PolicySerializer
 from accounts.permissions import IsAdmin, IsClient
 from notifications.utils import create_notification
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 
 class InsuranceProductListView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=InsuranceProductSerializer(many=True), tags=["Assurance"])
     def get(self, request):
         produits = InsuranceProduct.objects.filter(is_active=True)
         serializer = InsuranceProductSerializer(produits, many=True)
         return Response(serializer.data)
 
+    @extend_schema(request=InsuranceProductSerializer, responses=InsuranceProductSerializer, tags=["Assurance"])
     def post(self, request):
         if request.user.role != 'ADMIN':
             return Response({"error": "Accès refusé."}, status=status.HTTP_403_FORBIDDEN)
@@ -39,6 +42,7 @@ class InsuranceProductDetailView(APIView):
         except InsuranceProduct.DoesNotExist:
             return None
 
+    @extend_schema(request=InsuranceProductSerializer, responses=InsuranceProductSerializer, tags=["Assurance"])
     def put(self, request, pk):
         produit = self.get_object(pk)
         if not produit:
@@ -49,6 +53,7 @@ class InsuranceProductDetailView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(responses={200: OpenApiResponse(description="Produit désactivé")}, tags=["Assurance"])
     def delete(self, request, pk):
         produit = self.get_object(pk)
         if not produit:
@@ -61,6 +66,7 @@ class InsuranceProductDetailView(APIView):
 class PolicyListView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=PolicySerializer(many=True), tags=["Assurance"])
     def get(self, request):
         if request.user.role == 'CLIENT':
             policies = Policy.objects.filter(client=request.user)
@@ -69,6 +75,7 @@ class PolicyListView(APIView):
         serializer = PolicySerializer(policies, many=True)
         return Response(serializer.data)
 
+    @extend_schema(request=PolicySerializer, responses=PolicySerializer, tags=["Assurance"])
     def post(self, request):
         if request.user.role != 'CLIENT':
             return Response({"error": "Seul un client peut souscrire."}, status=status.HTTP_403_FORBIDDEN)
@@ -95,6 +102,7 @@ class PolicyListView(APIView):
 class PolicyDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=PolicySerializer, tags=["Assurance"])
     def get(self, request, pk):
         try:
             policy = Policy.objects.get(pk=pk)

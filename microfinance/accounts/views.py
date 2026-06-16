@@ -9,6 +9,8 @@ from django.contrib.auth import authenticate
 from .models import User, LoginHistory
 from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, LoginHistorySerializer
 from .permissions import IsAdmin
+from drf_spectacular.utils import extend_schema, OpenApiResponse, inline_serializer
+from rest_framework import serializers as drf_serializers
 
 
 def get_client_ip(request):
@@ -23,6 +25,9 @@ def get_client_ip(request):
 class RegisterView(APIView):
     permission_classes = [AllowAny]
 
+    @extend_schema(request=RegisterSerializer,
+                   responses={201: OpenApiResponse(description="Compte créé")},
+                   tags=["Auth"])
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
@@ -37,6 +42,13 @@ class RegisterView(APIView):
 class LoginView(APIView):
     permission_classes = [AllowAny]
 
+    @extend_schema(request=LoginSerializer,
+                   responses=inline_serializer("LoginResponse", {
+                       "access": drf_serializers.CharField(),
+                       "refresh": drf_serializers.CharField(),
+                       "user": UserSerializer(),
+                   }),
+                   tags=["Auth"])
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
@@ -67,6 +79,9 @@ class LoginView(APIView):
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=inline_serializer("LogoutRequest", {"refresh": drf_serializers.CharField()}),
+                   responses={200: OpenApiResponse(description="Déconnexion réussie")},
+                   tags=["Auth"])
     def post(self, request):
         try:
             refresh_token = request.data["refresh"]
@@ -82,10 +97,12 @@ class LogoutView(APIView):
 class ProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=UserSerializer, tags=["Profil"])
     def get(self, request):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
 
+    @extend_schema(request=UserSerializer, responses=UserSerializer, tags=["Profil"])
     def put(self, request):
         serializer = UserSerializer(request.user, data=request.data, partial=True)
         if serializer.is_valid():
@@ -97,6 +114,7 @@ class ProfileView(APIView):
 class LoginHistoryView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=LoginHistorySerializer(many=True), tags=["Profil"])
     def get(self, request):
         history = LoginHistory.objects.filter(user=request.user)
         serializer = LoginHistorySerializer(history, many=True)
@@ -108,6 +126,7 @@ class LoginHistoryView(APIView):
 class UserListView(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]
 
+    @extend_schema(responses=UserSerializer(many=True), tags=["Utilisateurs (Admin)"])
     def get(self, request):
         users = User.objects.all()
         role = request.query_params.get('role')
@@ -126,12 +145,14 @@ class UserDetailView(APIView):
         except User.DoesNotExist:
             return None
 
+    @extend_schema(responses=UserSerializer, tags=["Utilisateurs (Admin)"])
     def get(self, request, pk):
         user = self.get_object(pk)
         if not user:
             return Response({"error": "Utilisateur introuvable."}, status=status.HTTP_404_NOT_FOUND)
         return Response(UserSerializer(user).data)
 
+    @extend_schema(request=UserSerializer, responses=UserSerializer, tags=["Utilisateurs (Admin)"])
     def put(self, request, pk):
         user = self.get_object(pk)
         if not user:
@@ -142,6 +163,7 @@ class UserDetailView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(responses={204: OpenApiResponse(description="Supprimé")}, tags=["Utilisateurs (Admin)"])
     def delete(self, request, pk):
         user = self.get_object(pk)
         if not user:
@@ -158,6 +180,9 @@ class UserDetailView(APIView):
 class UserToggleActiveView(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]
 
+    @extend_schema(request=None,
+                   responses={200: OpenApiResponse(description="Statut du compte basculé")},
+                   tags=["Utilisateurs (Admin)"])
     def post(self, request, pk):
         try:
             user = User.objects.get(pk=pk)
