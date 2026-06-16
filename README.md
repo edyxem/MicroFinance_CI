@@ -80,14 +80,6 @@ python manage.py runserver
 
 Le site est maintenant accessible sur http://127.0.0.1:8000
 
-**7. (Optionnel) Tâches planifiées quotidiennes**
-
-Les alertes d'échéance (J-3, retard J+1) et d'expiration d'assurance (J-15, passage automatique en *Expirée*) sont regroupées dans une commande à lancer chaque jour (via `cron` en production) :
-
-```bash
-python manage.py run_daily_tasks
-```
-
 ---
 
 ## Comptes de démonstration
