@@ -34,7 +34,7 @@ C'est tout. Pas besoin de Redis ou de PostgreSQL pour faire tourner le projet en
 **1. Clone le projet**  
 
 ```bash
-git clone https://github.com/ton-username/microfinance.git
+git clone https://github.com/edyxem/microfinance.git
 cd microfinance
 ```
 
